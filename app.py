@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api
 from models import db
@@ -17,27 +18,30 @@ migrate = Migrate(app, db)
 CORS(app, supports_credentials=True)
 api = Api(app)
 
+with app.app_context():
+    db.create_all()
+    
 @app.route('/')
 def home():
     return '<h1>Welcome to Moringa Hostels!</h1>'
     
-api.add_resource(Accommodation, '/accommodation')
-api.add_resource(AccommodationList, '/accommodation/<int:id>')
+api.add_resource(AccommodationList, '/accommodation')
+api.add_resource(Accommodation, '/accommodation/<int:id>')
 
-api.add_resource(Student_verification, '/student_verification')
-api.add_resource(Student_verificationList, '/student_verification/<int:id>')
+api.add_resource(Student_verificationList, '/student_verification')
+api.add_resource(Student_verification, '/student_verification/<int:id>')
 
-api.add_resource(Users, '/users')
-api.add_resource(UsersList, '/users/<int:id>')
+api.add_resource(UsersList, '/users')
+api.add_resource(Users, '/users/<int:id>')
 
-api.add_resource(Payments, '/payments')
-api.add_resource(PaymentsList, '/payments/<int:id>')
+api.add_resource(PaymentsList, '/payments')
+api.add_resource(Payments, '/payments/<int:id>')
 
-api.add_resource(Bookings, '/bookings')
-api.add_resource(BookingsList, '/bookings/<int:id>')
+api.add_resource(BookingsList, '/bookings')
+api.add_resource(Bookings, '/bookings/<int:id>')
 
-api.add_resource(Password_reset, '/password_reset')
-api.add_resource(Password_resetList, '/password_reset/<int:id>')
+api.add_resource(Password_resetList, '/password_reset')
+api.add_resource(Password_reset, '/password_reset/<int:id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
