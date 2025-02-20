@@ -3,14 +3,18 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from flask_migrate import Migrate
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 
+load_dotenv()
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'M@kkon3n'
+app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app,db)
@@ -75,7 +79,7 @@ class Accommodation(Resource):
     @jwt_required()
     def get(self):
         accommodations = Accommodations.query.all()
-        return[{'id':acom.id, 'price':acom.price, 'image':acom.image,'description':acom.description, 'availability':acom.availability} for acom in accommodations]
+        return[{'id':acom.id, 'name':acom.name, 'price':acom.price, 'image':acom.image,'description':acom.description, 'availability':acom.availability} for acom in accommodations]
 
 class Users(Resource):
     @jwt_required()
@@ -84,10 +88,10 @@ class Users(Resource):
         if current_user['role'] != 'admin':
             return {'error' : 'The user is forbidded!'}, 403
         user = User.query.all()
-        return[{'id':acom.id,'name':acom.name, 'email':acom.email} for acom in accommodations]
+        return[{'id':acom.id,'name':acom.name, 'email':acom.email} for acom in user]
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Refresh, '/refresh')
-api.add_resource(Accommodation, '/products')
+api.add_resource(Accommodation, '/accomodations')
 api.add_resource(User, '/users')
