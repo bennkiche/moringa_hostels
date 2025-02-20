@@ -25,7 +25,7 @@ def home():
     return '<h1>Welcome to Moringa Hostels!</h1>'
     
 api.add_resource(AccommodationList, '/accommodation')
-api.add_resource(Accommodation, '/accommodation/<int:id>')
+api.add_resource(Accommodation, '/accommodation/<int:id>', '/accommodation/<int:id>/availability')
 
 # api.add_resource(Student_verificationList, '/student_verification')
 # api.add_resource(Student_verification, '/student_verification/<int:id>')
@@ -36,7 +36,7 @@ api.add_resource(Users, '/users/<int:id>')
 # api.add_resource(PaymentsList, '/payments')
 # api.add_resource(Payments, '/payments/<int:id>')
 
-api.add_resource(BookingsList, '/bookings')
+api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>/cancel')
 api.add_resource(Bookings, '/bookings/<int:id>')
 
 # api.add_resource(Password_resetList, '/password_reset')
