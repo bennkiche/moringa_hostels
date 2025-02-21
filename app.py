@@ -1,6 +1,4 @@
 from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy_serializer import SerializerMixin
 from flask_migrate import Migrate
 from flask_cors import CORS
 import os
@@ -8,7 +6,8 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from resources.hostels import Accommodation,AccommodationList,Users,Payments,PaymentsList,Bookings,BookingsList
+from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList
+from models import db, User, Accommodations
 
 load_dotenv()
 
@@ -17,7 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app,db)
 CORS(app, supports_credentials=True)
 api = Api(app)
@@ -28,14 +27,6 @@ jwt = JWTManager(app)
 def index():
     return 'Welcome to the home page!'
 
-class User(db.Model, SerializerMixin):
-    __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.String, nullable = False, unique = True)
-    email = db.Column(db.String, nullable = False, unique = True)
-    password = db.Column(db.String, nullable = False)
-    role = db.Column(db.String, nullable = False, default = 'user')
-
 class Signup(Resource):
     def post(self):
         data = request.get_json()
@@ -45,7 +36,7 @@ class Signup(Resource):
         role = data.get('role', 'user')
 
         if "@gmail.com" not in email:
-            return {'error' : 'Invalid email format, email must contaion "@" symbol'}, 400
+            return {'error' : 'Invalid email format, email must contaion "@gmail.com"'}, 400
         if User.query.filter_by(name=name, email=email).first():
             return{'error' : 'Name or email already exists!'}, 400
         hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -76,13 +67,13 @@ class Refresh(Resource):
         new_access_token = create_refresh_token(identity = current_user)
         return{'access_token':new_access_token}, 201
     
-class Accommodation(Resource):
+class Accommodate(Resource):
     @jwt_required()
     def get(self):
         accommodations = Accommodations.query.all()
-        return[{'id':acom.id, 'name':acom.name, 'price':acom.price, 'image':acom.image,'description':acom.description, 'availability':acom.availability} for acom in accommodations]
+        return[{'id':acom.id, 'name':acom.name,'user_id':acom.user_id, 'price':acom.price, 'image':acom.image,'description':acom.description, 'availability':acom.availability} for acom in accommodations]
 
-class Users(Resource):
+class Use(Resource):
     @jwt_required()
     def post(self):
         current_user = get_jwt_identity()
@@ -94,11 +85,11 @@ class Users(Resource):
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Refresh, '/refresh')
-api.add_resource(Accommodation, '/accomodations')
-api.add_resource(User, '/users')
+api.add_resource(Accommodate, '/accomodate')
+api.add_resource(Use, '/users')
 
-api.add_resource(AccommodationList, '/accommodation')
-api.add_resource(Accommodation, '/accommodation/<int:id>')
+api.add_resource(AccommodationList, '/accommodations')
+api.add_resource(Accommodation, '/accommodations/<int:id>')
 
 api.add_resource(Users, '/users/<int:id>')
 
