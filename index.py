@@ -1,1 +1,1 @@
-print("Testing GitHub collaboration in index.py")
+print("Testing GitHub collaboration ")
