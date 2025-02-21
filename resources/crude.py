@@ -34,6 +34,13 @@ class Users(Resource):
         return {'message': 'User deleted successfully'}
 
 class AccommodationList(Resource):
+    def get (self):
+        accommodation = Accommodations.query.all()
+        if not accommodation:
+            return {"error": "Accommodation not found"}, 404
+        return [accommo.to_dict() for accommo in accommodation]
+
+
     def post(self):
         data = request.get_json()
         if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description', 'user_id')):
