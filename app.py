@@ -43,7 +43,7 @@ class Signup(Resource):
         password = data.get('password')
         role = data.get('role', 'user')
 
-        if "@" not in email:
+        if "@gmail.com" not in email:
             return {'error' : 'Invalid email format, email must contaion "@" symbol'}, 400
         if User.query.filter_by(name=name, email=email).first():
             return{'error' : 'Name or email already exists!'}, 400
