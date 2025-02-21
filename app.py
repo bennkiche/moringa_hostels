@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from resources.hostels import Accommodation,AccommodationList,Users,Payments,PaymentsList,Bookings,BookingsList
 
 load_dotenv()
 
@@ -95,3 +96,14 @@ api.add_resource(Login, '/login')
 api.add_resource(Refresh, '/refresh')
 api.add_resource(Accommodation, '/accomodations')
 api.add_resource(User, '/users')
+
+api.add_resource(AccommodationList, '/accommodation')
+api.add_resource(Accommodation, '/accommodation/<int:id>')
+
+api.add_resource(Users, '/users/<int:id>')
+
+api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>' )
+api.add_resource(Bookings, '/bookings/<int:id>')
+
+if __name__ == '__main__':
+    app.run(debug=True)
