@@ -3,7 +3,7 @@ from sqlalchemy_serializer import SerializerMixin
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
@@ -42,7 +42,7 @@ class Accommodations(db.Model, SerializerMixin):
     def __repr__(self):
         return f"Accommodations('{self.name}', '{self.user_id}')"
     
-class Booking(db.Model):
+class Booking(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     accommodation_id = db.Column(db.Integer, db.ForeignKey('accommodations.id'), nullable=False)

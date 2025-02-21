@@ -40,15 +40,16 @@ class AccommodationList(Resource):
             return {"error": "Accommodation not found"}, 404
         return [accommo.to_dict() for accommo in accommodation]
 
-
     def post(self):
         data = request.get_json()
         if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description', 'user_id')):
             return {'error': 'Missing required fields!'}, 422
         new_accommodation = Accommodations(
             name=data ['name'],
-            user_id=data['id'], price=data['price'],
-            image=data.get('image'), description=data.get('description'),
+            user_id=data['user_id'], 
+            price=data['price'],
+            image=data.get('image'), 
+            description=data.get('description'),
             availability=data['availability']
         )
         db.session.add(new_accommodation)
@@ -86,6 +87,8 @@ class Accommodation(Resource):
             return {'message': 'Accommodation not found'}, 404
         if 'name' in data:
             accommodation.name = data ['name']
+        if 'user_id' in data:
+            accommodation.user_id = data ['user_id']
         if 'price' in data:
             accommodation.price = data ['price']
         if 'description' in data:
@@ -98,13 +101,19 @@ class Accommodation(Resource):
     def delete(self, id):
         accommodation = Accommodations.query.get(id)
         if not accommodation:
-            return {'message': 'Accommodation not found'}, 404
+            return {'message': 'Accommodation not found!'}, 404
         db.session.delete(accommodation)
         db.session.commit()
-        return {'message': 'Accommodation deleted successfully'}
+        return {'message': 'Accommodation deleted successfully!'}
 
 #Bookings
 class BookingsList(Resource):
+    def get (self):
+        bookings = Booking.query.all()
+        if not bookings:
+            return {"error": "Bookings not found!"}, 404
+        return [accommo.to_dict() for accommo in bookings]
+     
     def post(self):
         data = request.get_json()
         if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'check_in', 'check_out')):
@@ -125,7 +134,7 @@ class BookingsList(Resource):
             Booking.check_in < check_out
         ).first()
         if existing_booking:
-            return {"error":"Accommodation not available for selected dates"}
+            return {"error":"Accommodation not available for selected dates!"}
         booking = Booking(
             user_id = user_id,
             accommodation_id = accommodation_id,
@@ -142,7 +151,7 @@ class BookingsList(Resource):
     def delete(self, id):
         booking = Booking.query.get(id)
         if not booking:
-            return {'message': 'Booking not found'}, 404
+            return {'message': 'Booking not found!'}, 404
 
         accommodation = Accommodations.query.get(booking.accommodation_id)
         if accommodation:
@@ -156,7 +165,7 @@ class Bookings (Resource):
     def get(self, id):
         booking = Booking.query.get(id)
         if not booking:
-            return {'message': 'Booking not found'}, 404
+            return {'message': 'Booking not found!'}, 404
         return {'id': booking.id, 
                 'check_in': str(booking.check_in),
                 'check_out': str(booking.check_out)}, 200

@@ -57,7 +57,7 @@ class Login(Resource):
         if user and bcrypt.check_password_hash(user.password, password):
             create_token = create_access_token(identity={'name':user.name, 'email':user.email, 'role':user.role})
             refresh_token = create_refresh_token(identity={'name':user.name, 'email':user.email, 'role':user.role})
-            return {'create_token':create_token, 'refresh_token':refresh_token, 'role':user.role}
+            return {'create_token':create_token, 'refresh_token':refresh_token, 'role':user.role, 'user': user.to_dict()}
         return {'error' : 'Incorrect name, email or password, please try again!'}, 401
     
 class Refresh(Resource):
@@ -80,12 +80,12 @@ class Use(Resource):
         if current_user['role'] != 'admin':
             return {'error' : 'The user is forbidded!'}, 403
         user = User.query.all()
-        return[{'id':acom.id,'name':acom.name, 'email':acom.email} for acom in user]
+        return[{'id':acom.id,'name':acom.name, 'email':acom.email, 'role':acom.role} for acom in user]
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Refresh, '/refresh')
-api.add_resource(Accommodate, '/accomodate')
+api.add_resource(Accommodate, '/accommodate')
 api.add_resource(Use, '/users')
 
 api.add_resource(AccommodationList, '/accommodations')
