@@ -4,7 +4,7 @@ from flask_restful import Api
 from models import db
 from flask_cors import CORS
 # import os
-from resources.hostels import Accommodation,AccommodationList,Users,UsersList,Payments,PaymentsList,Bookings,BookingsList,Password_reset,Password_resetList,Student_verification,Student_verificationList
+from resources.hostels import Accommodation,AccommodationList,Users,Payments,PaymentsList,Bookings,BookingsList
 # from dotenv import load_dotenv
 # load_dotenv()
 
@@ -25,22 +25,15 @@ def home():
     return '<h1>Welcome to Moringa Hostels!</h1>'
     
 api.add_resource(AccommodationList, '/accommodation')
-api.add_resource(Accommodation, '/accommodation/<int:id>', '/accommodation/<int:id>/availability')
+api.add_resource(Accommodation, '/accommodation/<int:id>')
 
-# api.add_resource(Student_verificationList, '/student_verification')
-# api.add_resource(Student_verification, '/student_verification/<int:id>')
-
-api.add_resource(UsersList, '/users')
 api.add_resource(Users, '/users/<int:id>')
 
 # api.add_resource(PaymentsList, '/payments')
 # api.add_resource(Payments, '/payments/<int:id>')
 
-api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>/cancel')
+api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>' )
 api.add_resource(Bookings, '/bookings/<int:id>')
-
-# api.add_resource(Password_resetList, '/password_reset')
-# api.add_resource(Password_reset, '/password_reset/<int:id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
