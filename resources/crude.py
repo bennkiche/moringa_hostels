@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-from models import User, Accommodations, Booking, db
+from models import User, Accommodations, Booking, db, Rooms
 from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -49,7 +49,7 @@ class AccommodationList(Resource):
             return {'error' : 'The user is forbidded from adding new accommodations!'}, 403
 
         data = request.get_json()
-        if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description', 'user_id')):
+        if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description')):
             return {'error': 'Missing required fields!'}, 422
         
         prices = data['price']
@@ -60,7 +60,6 @@ class AccommodationList(Resource):
         
         new_accommodation = Accommodations(
             name=data ['name'],
-            user_id=data['user_id'], 
             price=prices,
             image=data.get('image'), 
             description=data.get('description'),
@@ -79,6 +78,7 @@ class Accommodation(Resource):
             "name": accommodation.name,
             "availability": accommodation.availability
         }
+    
     def put(self, id):
         accommodation = Accommodations.query.get(id)
         if not accommodation:
@@ -105,8 +105,6 @@ class Accommodation(Resource):
             return {'message': 'Accommodation not found'}, 404
         if 'name' in data:
             accommodation.name = data ['name']
-        if 'user_id' in data:
-            accommodation.user_id = data ['user_id']
         if 'price' in data:
             prices = data['price']
             min = 7000
@@ -132,10 +130,88 @@ class Accommodation(Resource):
         db.session.delete(accommodation)
         db.session.commit()
         return {'message': 'Accommodation deleted successfully!'}
+    
+# Rooms
+class Room(Resource):
+    @jwt_required()
+    def get (self):
+        accommodation = Rooms.query.all()
+        if not accommodation:
+            return {"error": "Accommodation not found"}, 404
+        return [accommo.to_dict() for accommo in accommodation]
+    
+    @jwt_required()
+    def post(self):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from adding new rooms!'}, 403
+
+        data = request.get_json()
+        if not data or not all (key in data for key in ('room_no', 'accommodation_id', 'availability')):
+            return {'error': 'Missing required fields!'}, 422
+        
+        new_room = Rooms(
+            name=data ['name'],
+            room_no = data['room_no'],
+            accommodation_id=data.get('accommodation_id'),
+            availability=data['availability']
+        )
+        db.session.add(new_room)
+        db.session.commit()
+        return new_room.to_dict(), 201
+
+class RoomList(Resource):
+    @jwt_required()
+    def get(self, id):
+        accommodation = Rooms.query.get(id)
+        return {
+            "id": accommodation.id,
+            "room_id": accommodation.room_id,
+            "accommodation_id": accommodation.accommodation_id,
+            "availability": accommodation.availability
+        }
+    
+    @jwt_required()
+    def patch(self, id):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from editing the accommodations!'}, 403
+        
+        data = request.get_json()
+        accommodation = Rooms.query.get(id)
+        
+        if not accommodation:
+            return {'message': 'Accommodation not found'}, 404
+        if 'room_no' in data:
+            accommodation.room_no = data ['room_no']
+        if 'accommodation_id' in data:
+            accommodation.accommodation_id = data ['accommodation_id']
+        if 'availability' in data:
+            accommodation.availability = data ['availability']
+        db.session.commit()
+        return accommodation.to_dict(), 200
+    
+    @jwt_required()
+    def delete(self, id):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from deleting the accommodations!'}, 403
+        
+        accommodation = Rooms.query.get(id)
+        if not accommodation:
+            return {'message': 'Accommodation not found!'}, 404
+        db.session.delete(accommodation)
+        db.session.commit()
+        return {'message': 'Accommodation deleted successfully!'}
 
 #Bookings
 class BookingsList(Resource):
+    @jwt_required()
     def get (self):
+        current = get_jwt_identity()
+        if current['role'] != 'admin':
+            return {'error' : 'the user is not authorized!'}, 403
+        
         bookings = Booking.query.all()
         if not bookings:
             return {"error": "Bookings not found!"}, 404
@@ -143,10 +219,9 @@ class BookingsList(Resource):
      
     def post(self):
         data = request.get_json()
-        if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'check_in', 'check_out')):
+        if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'room_id', 'check_in', 'check_out')):
             return {'error': 'Missing required fields!'}, 422
        
-
         try:
             check_in = datetime.strptime(data['check_in'], "%Y-%m-%dT%H:%M") 
             check_out = datetime.strptime(data['check_out'], "%Y-%m-%dT%H:%M")
@@ -155,23 +230,31 @@ class BookingsList(Resource):
         
         user_id=data['user_id'],
         accommodation_id=data['accommodation_id'],
+        room_id=data['room_id']
+
+        room = Rooms.query.get(room_id)
+        if not room or room.accommodation_id != accommodation_id:
+            return {"error": "Room does not belong to the accommodation or does not exist!"}, 404
+
         existing_booking = Booking.query.filter(
-            Booking.accommodation_id == accommodation_id,
+            Booking.room_id == room_id,
             Booking.check_out > check_in,
             Booking.check_in < check_out
         ).first()
+
         if existing_booking:
-            return {"error":"Accommodation not available for selected dates!"}
+            return {"error":"Room not available for selected dates!"}
+        
         booking = Booking(
             user_id = user_id,
             accommodation_id = accommodation_id,
+            room_id = room_id,
             check_in = check_in,
             check_out = check_out
         )
+
         db.session.add(booking)
-        accommodation = Accommodations.query.get(accommodation_id)
-        if accommodation:
-            accommodation.availability = "booked!"
+        room.availability = "booked!"
         db.session.commit()
         return booking.to_dict(),201
     
@@ -179,14 +262,14 @@ class BookingsList(Resource):
         booking = Booking.query.get(id)
         if not booking:
             return {'message': 'Booking not found!'}, 404
-
-        accommodation = Accommodations.query.get(booking.accommodation_id)
-        if accommodation:
-            accommodation.availability = "available!"
+        
+        room = booking.room
+        if room:
+            room.availability = "available!"
 
         db.session.delete(booking)
         db.session.commit()
-        return {'message': 'Booking canceled successfully'}, 200
+        return {'message': 'Booking canceled successfully!'}, 200
 
 class Bookings (Resource):
     def get(self, id):

@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy 
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy import UniqueConstraint
 
 db = SQLAlchemy()
 
@@ -28,32 +29,46 @@ class Accommodations(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key = True, unique = True)
     name  = db.Column(db.String(100), nullable = False)
     price = db.Column(db.Integer, nullable=False)
-    image = db.Column(db.Text, nullable=True)
-    description = db.Column(db.Text, nullable=True)
-    availability = db.Column(db.String(50), nullable=False)
+    image = db.Column(db.String, nullable=True)
+    description = db.Column(db.String, nullable=True)
+    availability = db.Column(db.String, nullable=False)
 
     bookings = db.relationship('Booking', back_populates = 'accommodations', lazy = True)
+    rooms = db.relationship('Rooms', back_populates = 'rooms', lazy = True)
 
-    serialize_rules = ('-booking',)
+    serialize_rules = ('-bookings', '-rooms',)
 
     def __repr__(self):
         return f"Accommodations('{self.name}', '{self.price}', '{self.image}', '{self.description}', '{self.availability}' )"
+    
+class Rooms(db.Model, SerializerMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    room_no = db.Column(db.Integer, nullable=False)
+    accommodation_id = db.Column(db.Integer, db.ForeignKey('accommodations.id'), nullable=False)
+    availability = db.Column(db.String, nullable=False)
+
+    accommodations = db.relationship('Accommodations', back_populates='rooms', lazy=True)
+    bookings = db.relationship('Booking', back_populates='room', lazy=True)
+
+    __table_args__ = (UniqueConstraint('room_no', 'accommodation_id', name='_room_accommodation_uc'),)
+
+    serialize_rules = ('-accommodations.rooms', '-bookings')
     
 class Booking(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     accommodation_id = db.Column(db.Integer, db.ForeignKey('accommodations.id'), nullable=False)
-    room = db.Column(db.String(100), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('rooms.id'), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
     
     # Define the relationship with User without conflict
     user = db.relationship('User', back_populates='bookings', lazy=True)
-
     accommodations = db.relationship('Accommodations', back_populates='bookings', lazy=True)
+    room = db.relationship('Rooms', back_populates='bookings', lazy=True)
     payments = db.relationship('Payments', back_populates='book', lazy=True)
 
-    serialize_rules = ('-user.bookings', '-payments', '-accommodations.booking')
+    serialize_rules = ('-user.bookings', '-payments', '-accommodations.bookings', '-room.bookings')
 
     def __repr__(self):
         return f"Booking('{self.user_id}', '{self.accommodations_id}', '{self.room}', '{self.start_date}', '{self.end_date}')"
