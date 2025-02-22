@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from models import User, Accommodations, Booking, db
 from datetime import datetime
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 app = Flask(__name__)
 
@@ -34,20 +35,33 @@ class Users(Resource):
         return {'message': 'User deleted successfully'}
 
 class AccommodationList(Resource):
+    @jwt_required()
     def get (self):
         accommodation = Accommodations.query.all()
         if not accommodation:
             return {"error": "Accommodation not found"}, 404
         return [accommo.to_dict() for accommo in accommodation]
-
+    
+    @jwt_required()
     def post(self):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from adding new accommodations!'}, 403
+
         data = request.get_json()
         if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description', 'user_id')):
             return {'error': 'Missing required fields!'}, 422
+        
+        prices = data['price']
+        min = 7000
+        max = 30000
+        if prices < min or prices > max:
+            return {'error' : f'Hostel prices must be between {min} and {max} prices!'},400
+        
         new_accommodation = Accommodations(
             name=data ['name'],
             user_id=data['user_id'], 
-            price=data['price'],
+            price=prices,
             image=data.get('image'), 
             description=data.get('description'),
             availability=data['availability']
@@ -57,6 +71,7 @@ class AccommodationList(Resource):
         return new_accommodation.to_dict(), 201
 
 class Accommodation(Resource):
+    @jwt_required()
     def get(self, id):
         accommodation = Accommodations.query.get(id)
         return {
@@ -64,7 +79,6 @@ class Accommodation(Resource):
             "name": accommodation.name,
             "availability": accommodation.availability
         }
-    
     def put(self, id):
         accommodation = Accommodations.query.get(id)
         if not accommodation:
@@ -78,8 +92,12 @@ class Accommodation(Resource):
             "availability": accommodation.availability
         },200
 
-
+    @jwt_required()
     def patch(self, id):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from editing the accommodations!'}, 403
+        
         data = request.get_json()
         accommodation = Accommodations.query.get(id)
         
@@ -90,15 +108,24 @@ class Accommodation(Resource):
         if 'user_id' in data:
             accommodation.user_id = data ['user_id']
         if 'price' in data:
-            accommodation.price = data ['price']
+            prices = data['price']
+            min = 7000
+            max = 30000
+            if prices < min or prices > max:
+                return {'error' : f'Hostel prices must be between {min} and {max} prices!'},400
+            accommodation.price = prices
         if 'description' in data:
             accommodation.description = data ['description']
         if 'availability' in data:
             accommodation.availability = data ['availability']
         db.session.commit()
         return accommodation.to_dict(), 200
-  
+    @jwt_required()
     def delete(self, id):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'admin':
+            return {'error' : 'The user is forbidded from deleting the accommodations!'}, 403
+    
         accommodation = Accommodations.query.get(id)
         if not accommodation:
             return {'message': 'Accommodation not found!'}, 404

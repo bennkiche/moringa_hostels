@@ -12,11 +12,10 @@ class User(db.Model, SerializerMixin):
     
     # Relationship definition
     bookings = db.relationship('Booking', back_populates='user', lazy=True)
-    accommodations = db.relationship('Accommodations', back_populates='user', lazy=True)
     user_verification = db.relationship('User_verification', back_populates='user', lazy=True)
     password_reset = db.relationship('Password_reset', back_populates='user', lazy=True)
 
-    serialize_rules = ('-bookings', '-accommodations.user', '-user_verification.user', '-password_reset.user')
+    serialize_rules = ('-bookings', '-user_verification.user', '-password_reset.user')
 
     def __repr__(self):
         return f"User('{self.name}', '{self.email}')"
@@ -28,19 +27,17 @@ class Accommodations(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key = True, unique = True)
     name  = db.Column(db.String(100), nullable = False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     image = db.Column(db.Text, nullable=True)
     description = db.Column(db.Text, nullable=True)
     availability = db.Column(db.String(50), nullable=False)
 
     bookings = db.relationship('Booking', back_populates = 'accommodations', lazy = True)
-    user = db.relationship('User', back_populates = 'accommodations', lazy = True)
 
-    serialize_rules = ('-user.accommodations', '-booking')
+    serialize_rules = ('-booking',)
 
     def __repr__(self):
-        return f"Accommodations('{self.name}', '{self.user_id}')"
+        return f"Accommodations('{self.name}', '{self.price}', '{self.image}', '{self.description}', '{self.availability}' )"
     
 class Booking(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,7 +56,7 @@ class Booking(db.Model, SerializerMixin):
     serialize_rules = ('-user.bookings', '-payments', '-accommodations.booking')
 
     def __repr__(self):
-        return f"Booking('{self.user_id}', '{self.accommodations_id}')"
+        return f"Booking('{self.user_id}', '{self.accommodations_id}', '{self.room}', '{self.start_date}', '{self.end_date}')"
 
 
 class Payments(db.Model, SerializerMixin):
