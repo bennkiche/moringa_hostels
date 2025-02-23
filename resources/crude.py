@@ -250,8 +250,10 @@ class BookingsList(Resource):
         room_id=data['room_id']
 
         room = Rooms.query.get(room_id)
-        if not room or room.accommodation_id != accommodation_id:
-            return {"error": "Room does not belong to the accommodation or does not exist!"}, 404
+        if not room :
+            return {"error": "The room does not exist!"}, 404
+        if room.accommodation_id != accommodation_id:
+            return {"error": "The room does not belong to the accommodation!"}, 404
 
         existing_booking = Booking.query.filter(
             Booking.room_id == room_id,
