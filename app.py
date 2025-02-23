@@ -104,7 +104,7 @@ api.add_resource(Use, '/users')
 api.add_resource(AccommodationList, '/accommodations')
 api.add_resource(Accommodation, '/accommodations/<int:id>')
 
-api.add_resource(Room, '/rooms/<int:id>')
+api.add_resource(Room, '/rooms')
 api.add_resource(RoomList, '/rooms/<int:id>')
 
 api.add_resource(Users, '/users/<int:id>')

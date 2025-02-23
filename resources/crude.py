@@ -150,9 +150,14 @@ class Room(Resource):
         if not data or not all (key in data for key in ('room_no', 'accommodation_id', 'availability')):
             return {'error': 'Missing required fields!'}, 422
         
+        room_no = data['room_no']
+        min = 1
+        max = 100
+        if room_no < min or room_no > max:
+            return {'error' : f'Hostel rooms must be between {min} and {max} respectively!'},400
+        
         new_room = Rooms(
-            name=data ['name'],
-            room_no = data['room_no'],
+            room_no = room_no,
             accommodation_id=data.get('accommodation_id'),
             availability=data['availability']
         )
@@ -182,8 +187,15 @@ class RoomList(Resource):
         
         if not accommodation:
             return {'message': 'Accommodation not found'}, 404
+        
         if 'room_no' in data:
-            accommodation.room_no = data ['room_no']
+            room = data ['room_no']
+            min = 1
+            max = 100
+            if room < min or room > max:
+                return {'error' : f'Hostel rooms must be between {min} and {max} respectively!'},400
+            accommodation.room_no = room
+
         if 'accommodation_id' in data:
             accommodation.accommodation_id = data ['accommodation_id']
         if 'availability' in data:
@@ -219,12 +231,12 @@ class BookingsList(Resource):
      
     def post(self):
         data = request.get_json()
-        if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'room_id', 'check_in', 'check_out')):
+        if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'room_id', 'start_date', 'end_date')):
             return {'error': 'Missing required fields!'}, 422
        
         try:
-            check_in = datetime.strptime(data['check_in'], "%Y-%m-%dT%H:%M") 
-            check_out = datetime.strptime(data['check_out'], "%Y-%m-%dT%H:%M")
+            start_date = datetime.strptime(data['start_date'], "%Y-%m-%d %H:%M") 
+            end_date = datetime.strptime(data['end_date'], "%Y-%m-%d %H:%M")
         except ValueError:
             return {'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM'}, 400
         
@@ -238,8 +250,8 @@ class BookingsList(Resource):
 
         existing_booking = Booking.query.filter(
             Booking.room_id == room_id,
-            Booking.check_out > check_in,
-            Booking.check_in < check_out
+            Booking.end_date > start_date,
+            Booking.start_date < end_date
         ).first()
 
         if existing_booking:
@@ -249,8 +261,8 @@ class BookingsList(Resource):
             user_id = user_id,
             accommodation_id = accommodation_id,
             room_id = room_id,
-            check_in = check_in,
-            check_out = check_out
+            start_date = start_date,
+            end_date = end_date
         )
 
         db.session.add(booking)
@@ -277,6 +289,6 @@ class Bookings (Resource):
         if not booking:
             return {'message': 'Booking not found!'}, 404
         return {'id': booking.id, 
-                'check_in': str(booking.check_in),
-                'check_out': str(booking.check_out)}, 200
+                'start_date': str(booking.start_date),
+                'end_date': str(booking.end_date)}, 200
 
