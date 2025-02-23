@@ -34,7 +34,7 @@ class Accommodations(db.Model, SerializerMixin):
     availability = db.Column(db.String, nullable=False)
 
     bookings = db.relationship('Booking', back_populates = 'accommodations', lazy = True)
-    rooms = db.relationship('Rooms', back_populates = 'rooms', lazy = True)
+    rooms = db.relationship('Rooms', back_populates = 'accommodations', lazy = True)
 
     serialize_rules = ('-bookings', '-rooms',)
 

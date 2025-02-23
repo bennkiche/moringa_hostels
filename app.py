@@ -55,10 +55,22 @@ class Login(Resource):
 
         user = User.query.filter_by(name=name, email=email).first()
         if user and bcrypt.check_password_hash(user.password, password):
-            create_token = create_access_token(identity={'name':user.name, 'email':user.email, 'role':user.role})
-            refresh_token = create_refresh_token(identity={'name':user.name, 'email':user.email, 'role':user.role})
+            create_token = create_access_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
+            refresh_token = create_refresh_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
             return {'create_token':create_token, 'refresh_token':refresh_token, 'role':user.role, 'user': user.to_dict()}
         return {'error' : 'Incorrect name, email or password, please try again!'}, 401
+
+class DeleteAcc(Resource):
+    @jwt_required()
+    def delete(self):
+        current = get_jwt_identity()
+        current_user = current.get('id')
+        delete_user = User.query.get(current_user)
+        if not delete_user:
+            return{'error' : 'the user does not exist!'}, 404
+        db.session.delete(delete_user)
+        db.session.commit()
+        return {'message' : 'the user was deleted successfully!'}, 200
     
 class Refresh(Resource):
     @jwt_required(refresh = True)
@@ -85,6 +97,7 @@ class Use(Resource):
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Refresh, '/refresh')
+api.add_resource(DeleteAcc, '/delete')
 api.add_resource(Accommodate, '/accommodate')
 api.add_resource(Use, '/users')
 
