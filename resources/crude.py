@@ -228,8 +228,13 @@ class BookingsList(Resource):
         if not bookings:
             return {"error": "Bookings not found!"}, 404
         return [accommo.to_dict() for accommo in bookings]
-     
+    
+    @jwt_required()
     def post(self):
+        current = get_jwt_identity()
+        if current['role'] != 'user':
+            return {'error' : 'the user is not authorized!'}, 403
+        
         data = request.get_json()
         if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'room_id', 'start_date', 'end_date')):
             return {'error': 'Missing required fields!'}, 422
@@ -283,12 +288,23 @@ class BookingsList(Resource):
         db.session.commit()
         return {'message': 'Booking canceled successfully!'}, 200
 
-class Bookings (Resource):
+class Bookings(Resource):
+    @jwt_required()
     def get(self, id):
+        current = get_jwt_identity()
         booking = Booking.query.get(id)
         if not booking:
             return {'message': 'Booking not found!'}, 404
-        return {'id': booking.id, 
-                'start_date': str(booking.start_date),
-                'end_date': str(booking.end_date)}, 200
+        
+        if booking.user_id != current['user_id'] and current['role'] != 'admin':
+            return {'error' : 'the user is not authorized!'}, 403
+        
+        return {
+            'id': booking.id,
+            'user_id': booking.user_id,
+            'accommodation_id': booking.accommodation_id,
+            'room_id': booking.room_id,
+            'start_date': booking.start_date,
+            'end_date': booking.end_date
+        }, 200
 
