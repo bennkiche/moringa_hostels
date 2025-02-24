@@ -46,7 +46,7 @@ class AccommodationList(Resource):
     def post(self):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from adding new accommodations!'}, 403
+            return {'error' : 'The user is forbidden from adding new accommodations!'}, 403
 
         data = request.get_json()
         if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description')):
@@ -96,7 +96,7 @@ class Accommodation(Resource):
     def patch(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from editing the accommodations!'}, 403
+            return {'error' : 'The user is forbidden from editing the accommodations!'}, 403
         
         data = request.get_json()
         accommodation = Accommodations.query.get(id)
@@ -122,7 +122,7 @@ class Accommodation(Resource):
     def delete(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from deleting the accommodations!'}, 403
+            return {'error' : 'The user is forbidden from deleting the accommodations!'}, 403
     
         accommodation = Accommodations.query.get(id)
         if not accommodation:
@@ -144,7 +144,7 @@ class Room(Resource):
     def post(self):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from adding new rooms!'}, 403
+            return {'error' : 'The user is forbidden from adding new rooms!'}, 403
 
         data = request.get_json()
         if not data or not all (key in data for key in ('room_no', 'accommodation_id', 'availability')):
@@ -180,7 +180,7 @@ class RoomList(Resource):
     def patch(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from editing the accommodations!'}, 403
+            return {'error' : 'The user is forbidden from editing the accommodations!'}, 403
         
         data = request.get_json()
         accommodation = Rooms.query.get(id)
@@ -207,7 +207,7 @@ class RoomList(Resource):
     def delete(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded from deleting the accommodations!'}, 403
+            return {'error' : 'The user is forbidden from deleting the accommodations!'}, 403
         
         accommodation = Rooms.query.get(id)
         if not accommodation:

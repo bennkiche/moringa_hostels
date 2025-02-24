@@ -37,8 +37,8 @@ class Signup(Resource):
 
         if "@gmail.com" not in email:
             return {'error' : 'Invalid email format, email must contaion "@gmail.com"'}, 400
-        if User.query.filter_by(name=name, email=email).first():
-            return{'error' : 'Name or email already exists!'}, 400
+        if User.query.filter_by(email=email).first():
+            return{'error' : 'Email already exists!'}, 400
         hash = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(name=name, email=email, password = hash, role = role)
         db.session.add(new_user)

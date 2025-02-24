@@ -71,7 +71,7 @@ class Booking(db.Model, SerializerMixin):
     serialize_rules = ('-user.bookings', '-payments', '-accommodations.bookings', '-room.bookings')
 
     def __repr__(self):
-        return f"Booking('{self.user_id}', '{self.accommodations_id}', '{self.room}', '{self.start_date}', '{self.end_date}')"
+        return f"Booking('{self.user_id}', '{self.accommodation_id}', '{self.room}', '{self.start_date}', '{self.end_date}')"
 
 
 class Payments(db.Model, SerializerMixin):
