@@ -236,7 +236,7 @@ class BookingsList(Resource):
             return {'error' : 'the user is not authorized!'}, 403
         
         data = request.get_json()
-        if not data or not all (key in data for key in ('user_id', 'accommodation_id', 'room_id', 'start_date', 'end_date')):
+        if not data or not all (key in data for key in ('accommodation_id', 'room_id', 'start_date', 'end_date')):
             return {'error': 'Missing required fields!'}, 422
        
         try:
@@ -245,8 +245,8 @@ class BookingsList(Resource):
         except ValueError:
             return {'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM'}, 400
         
-        user_id=data['user_id'],
-        accommodation_id=data['accommodation_id'],
+        user_id=current['id']
+        accommodation_id=data['accommodation_id']
         room_id=data['room_id']
 
         room = Rooms.query.get(room_id)
@@ -256,7 +256,7 @@ class BookingsList(Resource):
             return {"error": "The room does not belong to the accommodation!"}, 404
 
         existing_booking = Booking.query.filter(
-            Booking.room_id == room_id,
+            Booking.room_id == room.id, 
             Booking.end_date > start_date,
             Booking.start_date < end_date
         ).first()
@@ -267,7 +267,7 @@ class BookingsList(Resource):
         booking = Booking(
             user_id = user_id,
             accommodation_id = accommodation_id,
-            room_id = room_id,
+            room_id = room.id,
             start_date = start_date,
             end_date = end_date
         )
@@ -277,10 +277,16 @@ class BookingsList(Resource):
         db.session.commit()
         return booking.to_dict(),201
     
+    @jwt_required()
     def delete(self, id):
+        current =  get_jwt_identity()
+
         booking = Booking.query.get(id)
         if not booking:
             return {'message': 'Booking not found!'}, 404
+        
+        if current['role'] != 'admin' and booking.user_id != current['id']:
+            return {'error' : 'the user is not authorized to delete the booking!'}, 403
         
         room = booking.room
         if room:
@@ -298,7 +304,7 @@ class Bookings(Resource):
         if not booking:
             return {'message': 'Booking not found!'}, 404
         
-        if booking.user_id != current['user_id'] and current['role'] != 'admin':
+        if booking.user_id != current['id'] and current['role'] != 'admin':
             return {'error' : 'the user is not authorized!'}, 403
         
         return {
