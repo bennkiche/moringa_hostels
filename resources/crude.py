@@ -236,6 +236,7 @@ class BookingsList(Resource):
             return {'error' : 'the user is not authorized!'}, 403
         
         data = request.get_json()
+
         if not data or not all (key in data for key in ('accommodation_id', 'room_id', 'start_date', 'end_date')):
             return {'error': 'Missing required fields!'}, 422
        
@@ -262,7 +263,7 @@ class BookingsList(Resource):
         ).first()
 
         if existing_booking:
-            return {"error":"Room not available for selected dates!"}
+            return {"error" : "Room not available for selected dates!"}
         
         booking = Booking(
             user_id = user_id,

@@ -2,6 +2,7 @@ from flask import Flask, request
 from flask_migrate import Migrate
 from flask_cors import CORS
 import os
+import re
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
@@ -27,6 +28,12 @@ jwt = JWTManager(app)
 def index():
     return 'Welcome to the home page!'
 
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+def is_strong_password(password):
+    return re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$", password)
+
 class Signup(Resource):
     def post(self):
         data = request.get_json()
@@ -35,10 +42,15 @@ class Signup(Resource):
         password = data.get('password')
         role = data.get('role', 'user')
 
-        if "@gmail.com" not in email:
-            return {'error' : 'Invalid email format, email must contaion "@gmail.com"'}, 400
+        if not is_valid_email(email):
+            return {'error': 'Invalid email format, please provide a valid email address.'}, 400
+        
         if User.query.filter_by(email=email).first():
             return{'error' : 'Email already exists!'}, 400
+        
+        if not is_strong_password(password):
+            return {'error': 'Password must be at least 8 characters long and contain both letters and numbers.'}, 400
+        
         hash = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(name=name, email=email, password = hash, role = role)
         db.session.add(new_user)
