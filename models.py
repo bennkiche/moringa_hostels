@@ -28,10 +28,8 @@ class Accommodations(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key = True, unique = True)
     name  = db.Column(db.String(100), nullable = False)
-    price = db.Column(db.Integer, nullable=False)
     image = db.Column(db.String, nullable=True)
     description = db.Column(db.String, nullable=True)
-    availability = db.Column(db.String, nullable=False)
 
     bookings = db.relationship('Booking', back_populates = 'accommodations', lazy = True)
     rooms = db.relationship('Rooms', back_populates = 'accommodations', lazy = True)
@@ -44,7 +42,9 @@ class Accommodations(db.Model, SerializerMixin):
 class Rooms(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     room_no = db.Column(db.Integer, nullable=False)
+    room_type = db.Column(db.String, nullable=False)
     accommodation_id = db.Column(db.Integer, db.ForeignKey('accommodations.id'), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
     availability = db.Column(db.String, nullable=False)
 
     accommodations = db.relationship('Accommodations', back_populates='rooms', lazy=True)

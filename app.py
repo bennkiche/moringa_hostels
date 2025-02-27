@@ -5,6 +5,7 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import os
 import re
+import requests
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
@@ -20,12 +21,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME') 
+# app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+# app.config['MAIL_PORT'] = 465
+# app.config['MAIL_USE_SSL'] = True
+# app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  
+# app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+# app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME') 
+
+EMAIL_VALIDATION_API_URL = "https://api.hunter.io/v2/email-verifier?email=patrick@stripe.com&api_key=d5f447e6899752c07f68353670b65a6beff937f1"
+EMAIL_VALIDATION_API_KEY = "d5f447e6899752c07f68353670b65a6beff937f1"
 
 db.init_app(app)
 migrate = Migrate(app,db)
@@ -35,67 +39,75 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 mail = Mail(app)
 
-s = Serializer(app.config['SECRET_KEY'])
+# s = Serializer(app.config['SECRET_KEY'])
 
-class ResetPasswordRequest(Resource):
-    def post(self):
-        email = request.json.get('email')
+# class ResetPasswordRequest(Resource):
+#     def post(self):
+#         email = request.json.get('email')
 
-        if not email:
-            return jsonify({"error": "Email is required"}), 400
+#         if not email:
+#             return {"error": "Email is required"}, 400
 
-        user = User.query.filter_by(email=email).first()
-        if user is None:
-            return jsonify({"error": "No account found with that email address"}), 404
+#         user = User.query.filter_by(email=email).first()
+#         if user is None:
+#             return {"error": "No account found with that email address"}, 404
 
-        token = s.dumps(email, salt='password-reset-salt')
+#         token = s.dumps(email, salt='password-reset-salt')
 
-        reset_url = f'http://127.0.0.1:5000/reset-password/{token}'
+#         reset_url = f'http://127.0.0.1:5000/reset-password/{token}'
 
-        msg = Message('Password Reset Request',
-                      recipients=[email],
-                      body=f'Click the link to reset your password: {reset_url}')
+#         msg = Message('Password Reset Request',
+#                       recipients=[email],
+#                       body=f'Click the link to reset your password: {reset_url}')
         
-        try:
-            mail.send(msg)
-            return jsonify({"message": "Password reset email sent!"}), 200
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+#         try:
+#             mail.send(msg)
+#             return {"message": "Password reset email sent!"}, 200
+#         except Exception as e:
+#             return {"error": str(e)}, 500
 
-class ResetPassword(Resource):
-    def post(self, token):
-        try:
-            email = s.loads(token, salt='password-reset-salt', max_age=3600)
-        except Exception as e:
-            return jsonify({"error": "Invalid or expired token"}), 400
+# class ResetPassword(Resource):
+#     def post(self, token):
+#         try:
+#             email = s.loads(token, salt='password-reset-salt', max_age=3600)
+#         except Exception as e:
+#             return {"error": "Invalid or expired token"}, 400
 
-        data = request.get_json()
-        new_password = data.get('password')
+#         data = request.get_json()
+#         new_password = data.get('password')
 
-        if not new_password:
-            return jsonify({"error": "Password is required"}), 400
+#         if not new_password:
+#             return {"error": "Password is required"}, 400
 
-        if not is_strong_password(new_password):
-            return jsonify({"error": "Password must be at least 8 characters long and contain both letters and numbers."}), 400
+#         if not is_strong_password(new_password):
+#             return {"error": "Password must be at least 8 characters long and contain both letters and numbers."}, 400
 
-        user = User.query.filter_by(email=email).first()
-        if user is None:
-            return jsonify({"error": "User not found"}), 404
+#         user = User.query.filter_by(email=email).first()
+#         if user is None:
+#             return {"error": "User not found"}, 404
 
-        hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+#         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
 
-        user.password = hashed_password
-        db.session.commit()
+#         user.password = hashed_password
+#         db.session.commit()
 
-        return jsonify({"message": "Password has been successfully reset!"}), 200
+#         return {"message": "Password has been successfully reset!"}, 200
 
 
-def is_strong_password(password):
-    return len(password) >= 8 and any(char.isdigit() for char in password) and any(char.isalpha() for char in password)
+# def is_strong_password(password):
+#     return len(password) >= 8 and any(char.isdigit() for char in password) and any(char.isalpha() for char in password)
 
 @app.route('/')
 def index():
     return 'Welcome to the home page!'
+
+def is_real_email(email):
+    response = requests.get(f"{EMAIL_VALIDATION_API_URL}?email={email}&api_key={EMAIL_VALIDATION_API_KEY}")
+    data = response.json()
+    
+    if response.status_code == 200 and data.get('data', {}).get('result') == 'deliverable':
+        return True
+    return False
 
 def is_valid_email(email):
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
@@ -113,6 +125,9 @@ class Signup(Resource):
 
         if not is_valid_email(email):
             return {'error': 'Invalid email format, please provide a valid email address.'}, 400
+        
+        if not is_real_email(email):
+            return {'error': 'The email provided does not exist or is invalid in real life.'}, 400
 
         if User.query.filter_by(email=email).first():
             return {'error': 'Email already exists!'}, 400
@@ -186,8 +201,8 @@ api.add_resource(DeleteAcc, '/delete')
 api.add_resource(Accommodate, '/accommodate')
 api.add_resource(Use, '/users')
 
-api.add_resource(ResetPasswordRequest, '/reset-password')
-api.add_resource(ResetPassword, '/reset-password/<token>')
+# api.add_resource(ResetPasswordRequest, '/reset-password')
+# api.add_resource(ResetPassword, '/reset-password/<token>')
 
 api.add_resource(AccommodationList, '/accommodations')
 api.add_resource(Accommodation, '/accommodations/<int:id>')

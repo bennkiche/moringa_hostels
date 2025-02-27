@@ -35,7 +35,6 @@ class Users(Resource):
         return {'message': 'User deleted successfully'}
 
 class AccommodationList(Resource):
-    @jwt_required()
     def get (self):
         accommodation = Accommodations.query.all()
         if not accommodation:
@@ -49,21 +48,13 @@ class AccommodationList(Resource):
             return {'error' : 'The user is forbidden from adding new accommodations!'}, 403
 
         data = request.get_json()
-        if not data or not all (key in data for key in ('name', 'image', 'availability', 'price', 'description')):
+        if not data or not all (key in data for key in ('name', 'image', 'description')):
             return {'error': 'Missing required fields!'}, 422
-        
-        prices = data['price']
-        min = 7000
-        max = 30000
-        if prices < min or prices > max:
-            return {'error' : f'Hostel prices must be between {min} and {max} prices!'},400
         
         new_accommodation = Accommodations(
             name=data ['name'],
-            price=prices,
             image=data.get('image'), 
-            description=data.get('description'),
-            availability=data['availability']
+            description=data.get('description')
         )
         db.session.add(new_accommodation)
         db.session.commit()
@@ -76,7 +67,7 @@ class Accommodation(Resource):
         return {
             "id": accommodation.id,
             "name": accommodation.name,
-            "availability": accommodation.availability
+            "description": accommodation.description
         }
     
     def put(self, id):
@@ -84,7 +75,9 @@ class Accommodation(Resource):
         if not accommodation:
             return {'message': 'Accommodation not found'}, 404
         data = request.get_json()
-        accommodation.availability = data.get('availability', accommodation.availability)
+        availability = data.get('availability')
+        if availability is not None:
+            accommodation.availability = availability
         db.session.commit()
         return {
             "id": accommodation.id,
@@ -105,17 +98,8 @@ class Accommodation(Resource):
             return {'message': 'Accommodation not found'}, 404
         if 'name' in data:
             accommodation.name = data ['name']
-        if 'price' in data:
-            prices = data['price']
-            min = 7000
-            max = 30000
-            if prices < min or prices > max:
-                return {'error' : f'Hostel prices must be between {min} and {max} prices!'},400
-            accommodation.price = prices
         if 'description' in data:
             accommodation.description = data ['description']
-        if 'availability' in data:
-            accommodation.availability = data ['availability']
         db.session.commit()
         return accommodation.to_dict(), 200
     @jwt_required()
@@ -133,7 +117,6 @@ class Accommodation(Resource):
     
 # Rooms
 class Room(Resource):
-    @jwt_required()
     def get (self):
         accommodation = Rooms.query.all()
         if not accommodation:
@@ -147,7 +130,7 @@ class Room(Resource):
             return {'error' : 'The user is forbidden from adding new rooms!'}, 403
 
         data = request.get_json()
-        if not data or not all (key in data for key in ('room_no', 'accommodation_id', 'availability')):
+        if not data or not all (key in data for key in ('room_no','room_type','price', 'accommodation_id', 'availability')):
             return {'error': 'Missing required fields!'}, 422
         
         room_no = data['room_no']
@@ -156,8 +139,16 @@ class Room(Resource):
         if room_no < min or room_no > max:
             return {'error' : f'Hostel rooms must be between {min} and {max} respectively!'},400
         
+        price = data['price']
+        min = 7000
+        max = 30000
+        if price < min or price > max:
+            return {'error' : f'Room price must be between {min} and {max} price!'},400
+
         new_room = Rooms(
             room_no = room_no,
+            price = price,
+            room_type = data['room_type'],
             accommodation_id=data.get('accommodation_id'),
             availability=data['availability']
         )
@@ -172,6 +163,8 @@ class RoomList(Resource):
         return {
             "id": accommodation.id,
             "room_id": accommodation.room_id,
+            "room_type": accommodation.room_type,
+            "price": accommodation.price,
             "accommodation_id": accommodation.accommodation_id,
             "availability": accommodation.availability
         }
@@ -195,6 +188,14 @@ class RoomList(Resource):
             if room < min or room > max:
                 return {'error' : f'Hostel rooms must be between {min} and {max} respectively!'},400
             accommodation.room_no = room
+
+        if 'price' in data:
+            price = data['price']
+            min = 7000
+            max = 30000
+            if price < min or price > max:
+                return {'error' : f'Room price must be between {min} and {max} price!'},400
+            accommodation.price = price
 
         if 'accommodation_id' in data:
             accommodation.accommodation_id = data ['accommodation_id']
