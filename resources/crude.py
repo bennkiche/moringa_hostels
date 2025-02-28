@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from models import User, Accommodations, Booking, db, Rooms
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 app = Flask(__name__)
@@ -254,6 +254,10 @@ class BookingsList(Resource):
             end_date = datetime.strptime(data['end_date'], "%Y-%m-%d %H:%M")
         except ValueError:
             return {'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM'}, 400
+        
+        min_duration = timedelta(days=30)
+        if(end_date - start_date) < min_duration:
+            return{'error' : 'A booking must be atleast 1 month(30 days)!'}, 400
         
         user_id=current['id']
         accommodation_id=data['accommodation_id']
