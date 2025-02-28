@@ -130,7 +130,7 @@ class Room(Resource):
             return {'error' : 'The user is forbidden from adding new rooms!'}, 403
 
         data = request.get_json()
-        if not data or not all (key in data for key in ('room_no','room_type','price', 'accommodation_id', 'availability')):
+        if not data or not all (key in data for key in ('room_no','room_type','price', 'accommodation_id', 'availability', 'image', 'description')):
             return {'error': 'Missing required fields!'}, 422
         
         room_no = data['room_no']
@@ -150,7 +150,9 @@ class Room(Resource):
             price = price,
             room_type = data['room_type'],
             accommodation_id=data.get('accommodation_id'),
-            availability=data['availability']
+            availability=data['availability'],
+            image=data['image'],
+            description=data['description']
         )
         db.session.add(new_room)
         db.session.commit()
@@ -166,7 +168,9 @@ class RoomList(Resource):
             "room_type": accommodation.room_type,
             "price": accommodation.price,
             "accommodation_id": accommodation.accommodation_id,
-            "availability": accommodation.availability
+            "image": accommodation.image,
+            "availability": accommodation.availability,
+            "description": accommodation.description
         }
     
     @jwt_required()
@@ -201,6 +205,10 @@ class RoomList(Resource):
             accommodation.accommodation_id = data ['accommodation_id']
         if 'availability' in data:
             accommodation.availability = data ['availability']
+        if 'image' in data:
+            accommodation.image = data ['image']
+        if 'description' in data:
+            accommodation.description = data ['description']
         db.session.commit()
         return accommodation.to_dict(), 200
     

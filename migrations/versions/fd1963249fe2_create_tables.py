@@ -1,8 +1,8 @@
 """create tables
 
-Revision ID: a15d95efd586
+Revision ID: fd1963249fe2
 Revises: 
-Create Date: 2025-02-28 08:51:14.537368
+Create Date: 2025-02-28 16:07:25.385793
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a15d95efd586'
+revision = 'fd1963249fe2'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,8 +21,8 @@ def upgrade():
     op.create_table('accommodations',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('image', sa.String(), nullable=True),
-    sa.Column('description', sa.String(), nullable=True),
+    sa.Column('image', sa.String(), nullable=False),
+    sa.Column('description', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
@@ -32,7 +32,6 @@ def upgrade():
     sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('password', sa.String(length=100), nullable=False),
     sa.Column('role', sa.String(length=50), nullable=False),
-    sa.Column('is_verified', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
@@ -52,6 +51,8 @@ def upgrade():
     sa.Column('accommodation_id', sa.Integer(), nullable=False),
     sa.Column('price', sa.Integer(), nullable=False),
     sa.Column('availability', sa.String(), nullable=False),
+    sa.Column('image', sa.String(), nullable=False),
+    sa.Column('description', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['accommodation_id'], ['accommodations.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('room_no', 'accommodation_id', name='_room_accommodation_uc')
