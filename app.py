@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_migrate import Migrate
 from flask_cors import CORS
-from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer as Serializer
 import os
 import re
 import requests
@@ -21,15 +19,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key')
 
-# app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-# app.config['MAIL_PORT'] = 465
-# app.config['MAIL_USE_SSL'] = True
-# app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  
-# app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-# app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME') 
-
-EMAIL_VALIDATION_API_URL = "https://api.hunter.io/v2/email-verifier?email=patrick@stripe.com&api_key=d5f447e6899752c07f68353670b65a6beff937f1"
-EMAIL_VALIDATION_API_KEY = "d5f447e6899752c07f68353670b65a6beff937f1"
+EMAIL_VALIDATION_API_URL = os.getenv('EMAIL_VALIDATION_API_URL')
+EMAIL_VALIDATION_API_KEY = os.getenv('EMAIL_VALIDATION_API_KEY')
 
 db.init_app(app)
 migrate = Migrate(app,db)
@@ -37,65 +28,8 @@ CORS(app, supports_credentials=True)
 api = Api(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-mail = Mail(app)
+# mail = Mail(app)
 
-# s = Serializer(app.config['SECRET_KEY'])
-
-# class ResetPasswordRequest(Resource):
-#     def post(self):
-#         email = request.json.get('email')
-
-#         if not email:
-#             return {"error": "Email is required"}, 400
-
-#         user = User.query.filter_by(email=email).first()
-#         if user is None:
-#             return {"error": "No account found with that email address"}, 404
-
-#         token = s.dumps(email, salt='password-reset-salt')
-
-#         reset_url = f'http://127.0.0.1:5000/reset-password/{token}'
-
-#         msg = Message('Password Reset Request',
-#                       recipients=[email],
-#                       body=f'Click the link to reset your password: {reset_url}')
-        
-#         try:
-#             mail.send(msg)
-#             return {"message": "Password reset email sent!"}, 200
-#         except Exception as e:
-#             return {"error": str(e)}, 500
-
-# class ResetPassword(Resource):
-#     def post(self, token):
-#         try:
-#             email = s.loads(token, salt='password-reset-salt', max_age=3600)
-#         except Exception as e:
-#             return {"error": "Invalid or expired token"}, 400
-
-#         data = request.get_json()
-#         new_password = data.get('password')
-
-#         if not new_password:
-#             return {"error": "Password is required"}, 400
-
-#         if not is_strong_password(new_password):
-#             return {"error": "Password must be at least 8 characters long and contain both letters and numbers."}, 400
-
-#         user = User.query.filter_by(email=email).first()
-#         if user is None:
-#             return {"error": "User not found"}, 404
-
-#         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-
-#         user.password = hashed_password
-#         db.session.commit()
-
-#         return {"message": "Password has been successfully reset!"}, 200
-
-
-# def is_strong_password(password):
-#     return len(password) >= 8 and any(char.isdigit() for char in password) and any(char.isalpha() for char in password)
 
 @app.route('/')
 def index():
@@ -136,7 +70,7 @@ class Signup(Resource):
             return {'error': 'Password must be at least 8 characters long and contain both letters and numbers.'}, 400
 
         hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(name=name, email=email, password=hash, role=role)
+        new_user = User(name=name, email=email, password=hash, role=role, is_verified=False)
         db.session.add(new_user)
         db.session.commit()
 
@@ -154,6 +88,7 @@ class Login(Resource):
         role = data.get('role', 'user')
 
         user = User.query.filter_by(name=name, email=email).first()
+        
         if user and bcrypt.check_password_hash(user.password, password):
             create_token = create_access_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
             refresh_token = create_refresh_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
@@ -201,8 +136,6 @@ api.add_resource(DeleteAcc, '/delete')
 api.add_resource(Accommodate, '/accommodate')
 api.add_resource(Use, '/users')
 
-# api.add_resource(ResetPasswordRequest, '/reset-password')
-# api.add_resource(ResetPassword, '/reset-password/<token>')
 
 api.add_resource(AccommodationList, '/accommodations')
 api.add_resource(Accommodation, '/accommodations/<int:id>')
