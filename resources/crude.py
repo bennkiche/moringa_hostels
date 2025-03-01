@@ -113,7 +113,7 @@ class Accommodation(Resource):
             return {'message': 'Accommodation not found!'}, 404
         db.session.delete(accommodation)
         db.session.commit()
-        return {'message': 'Accommodation deleted successfully!'}
+        return {'message': 'Accommodation and its associated rooms have been deleted successfully!'}, 200
     
 # Rooms
 class Room(Resource):
@@ -253,7 +253,7 @@ class BookingsList(Resource):
             start_date = datetime.strptime(data['start_date'], "%Y-%m-%d %H:%M") 
             end_date = datetime.strptime(data['end_date'], "%Y-%m-%d %H:%M")
         except ValueError:
-            return {'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM'}, 400
+            return {'error': 'Invalid date format. Use YYYY-MM-DD HH:MM'}, 400
         
         min_duration = timedelta(days=30)
         if(end_date - start_date) < min_duration:
