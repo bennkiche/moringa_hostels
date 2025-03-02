@@ -203,6 +203,8 @@ class RoomList(Resource):
 
         if 'accommodation_id' in data:
             accommodation.accommodation_id = data ['accommodation_id']
+        if 'room_type' in data:
+            accommodation.room_type = data ['room_type']
         if 'availability' in data:
             accommodation.availability = data ['availability']
         if 'image' in data:
