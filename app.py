@@ -60,8 +60,8 @@ class Signup(Resource):
         if not is_valid_email(email):
             return {'error': 'Invalid email format, please provide a valid email address.'}, 400
         
-        if not is_real_email(email):
-            return {'error': 'The email provided does not exist or is invalid in real life.'}, 400
+        # if not is_real_email(email):
+        #     return {'error': 'The email provided does not exist or is invalid in real life.'}, 400
 
         if User.query.filter_by(email=email).first():
             return {'error': 'Email already exists!'}, 400
@@ -70,7 +70,7 @@ class Signup(Resource):
             return {'error': 'Password must be at least 8 characters long and contain both letters and numbers.'}, 400
 
         hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(name=name, email=email, password=hash, role=role, is_verified=False)
+        new_user = User(name=name, email=email, password=hash, role=role)
         db.session.add(new_user)
         db.session.commit()
 

@@ -120,7 +120,7 @@ class Room(Resource):
     def get (self):
         accommodation = Rooms.query.all()
         if not accommodation:
-            return {"error": "Accommodation not found"}, 404
+            return {"error": "rooms not found"}, 404
         return [accommo.to_dict() for accommo in accommodation]
     
     @jwt_required()
@@ -164,7 +164,7 @@ class RoomList(Resource):
         accommodation = Rooms.query.get(id)
         return {
             "id": accommodation.id,
-            "room_id": accommodation.room_id,
+            "room_no": accommodation.room_no,
             "room_type": accommodation.room_type,
             "price": accommodation.price,
             "accommodation_id": accommodation.accommodation_id,

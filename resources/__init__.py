@@ -17,3 +17,12 @@
     "start_date": "2025-02-23 11:13",
     "end_date": "2025-02-24 11:13"
 }
+{
+    "room_type":"double roomed",
+    "room_no":1,
+    "accommodaton_id":1,
+    "price":23000,
+    "availability":"available!",
+    "description":"nice",
+    "image":"hostel room"
+}
