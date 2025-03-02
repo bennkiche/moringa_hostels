@@ -100,6 +100,8 @@ class Accommodation(Resource):
             accommodation.name = data ['name']
         if 'description' in data:
             accommodation.description = data ['description']
+        if 'image' in data:
+            accommodation.image = data ['image']
         db.session.commit()
         return accommodation.to_dict(), 200
     @jwt_required()
