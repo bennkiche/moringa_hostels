@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList, Room, RoomList
+from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList, Room, RoomList, Review, ReviewList
 from models import db, User, Accommodations
 
 load_dotenv()
@@ -24,7 +24,7 @@ EMAIL_VALIDATION_API_KEY = os.getenv('EMAIL_VALIDATION_API_KEY')
 
 db.init_app(app)
 migrate = Migrate(app,db)
-CORS(app, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 api = Api(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
@@ -76,7 +76,17 @@ class Signup(Resource):
 
         create_token = create_access_token(identity={'id': new_user.id, 'name': new_user.name, 'email': new_user.email, 'role': new_user.role})
 
-        return {'message': 'User created successfully!', 'create_token': create_token, 'user': new_user.to_dict()}, 201
+        return {
+            'message': 'User created successfully!',
+            'create_token': create_token,
+            'user': {
+                'id': new_user.id,
+                'name': new_user.name,
+                'email': new_user.email,
+                'role': new_user.role
+            }
+        }, 201
+
 
     
 class Login(Resource):
@@ -92,7 +102,18 @@ class Login(Resource):
         if user and bcrypt.check_password_hash(user.password, password):
             create_token = create_access_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
             refresh_token = create_refresh_token(identity={'id':user.id, 'name':user.name, 'email':user.email, 'role':user.role})
-            return {'create_token':create_token, 'refresh_token':refresh_token, 'role':user.role, 'user': user.to_dict()}
+            return {
+                'create_token': create_token,
+                'refresh_token': refresh_token,
+                'role': user.role,
+                'user': {
+                    'id': user.id,
+                    'name': user.name,
+                    'email': user.email,
+                    'role': user.role
+                }
+            }
+
         return {'error' : 'Incorrect name, email or password, please try again!'}, 401
 
 class DeleteAcc(Resource):
@@ -144,6 +165,9 @@ api.add_resource(Room, '/rooms')
 api.add_resource(RoomList, '/rooms/<int:id>')
 
 api.add_resource(Users, '/users/<int:id>')
+
+api.add_resource(Review, '/reviews', '/my-reviews')
+api.add_resource(ReviewList, '/reviews/<int:id>')
 
 api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>' )
 api.add_resource(Bookings, '/bookings/<int:id>')

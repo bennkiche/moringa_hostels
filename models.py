@@ -1,9 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy 
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy import UniqueConstraint
+from flask_marshmallow import Marshmallow
 
 db = SQLAlchemy()
+ma = Marshmallow()
 
+# User Model
 class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -11,15 +14,33 @@ class User(db.Model, SerializerMixin):
     password = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     
-    # Relationship definition
+    # Relationships
     bookings = db.relationship('Booking', back_populates='user', lazy=True)
     user_verification = db.relationship('User_verification', back_populates='user', lazy=True)
     password_reset = db.relationship('Password_reset', back_populates='user', lazy=True)
+    
+    # One-to-Many relationship with Review
+    reviews = db.relationship('Review', back_populates='user', lazy=True)
 
-    serialize_rules = ('-bookings', '-user_verification.user', '-password_reset.user')
+    serialize_rules = ('-bookings', '-user_verification.user', '-password_reset.user', '-reviews.user')
 
     def __repr__(self):
         return f"User('{self.name}', '{self.email}')"
+
+# Review Model
+class Reviews(db.Model, SerializerMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    rating = db.Column(db.Integer, nullable=False)
+    content = db.Column(db.Text, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Relationship to User
+    user = db.relationship('User', back_populates='reviews')
+
+    serialize_rules = ('-user.reviews',)
+
+    def __repr__(self):
+        return f"Review('{self.rating}', '{self.content[:20]}')"
 
     
     

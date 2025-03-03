@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-from models import User, Accommodations, Booking, db, Rooms
+from models import User, Accommodations, Booking, db, Rooms, Reviews
 from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash
 from flask_bcrypt import Bcrypt
@@ -20,18 +20,28 @@ class Users(Resource):
 
 class Users(Resource):
     @jwt_required()
-    def patch(self):
-        user_id = get_jwt_identity()
-        data = request.get_json()
+    def patch(self, id):
+        user = User.query.get(id)
 
-        user = User.query.get(user_id)
         if not user:
             return {'error': 'User not found'}, 404
 
-        # Ensure current password is provided
+        print(f"User found: {user.id}, Stored password: {user.password}")  # Debugging
+
+        data = request.get_json()
+        print(f"Received data: {data}")  # Debugging
+
         current_password = data.get('current_password')
-        if not current_password or not check_password_hash(user.password, current_password):
-            return {'error': 'Incorrect current password'}, 401
+
+        # Check if current password is provided
+        if not current_password:
+            return {'error': 'Current password is required'}, 400
+
+        try:
+            if not check_password_hash(user.password, current_password):
+                return {'error': 'Incorrect current password'}, 401
+        except ValueError as e:
+            return {'error': f'Invalid password hash: {str(e)}'}, 400
 
         # Allow updates for name, email, and password
         if 'name' in data:
@@ -239,14 +249,80 @@ class RoomList(Resource):
     def delete(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidden from deleting the accommodations!'}, 403
+            return {'error' : 'The user is forbidden from deleting the rooms!'}, 403
         
         accommodation = Rooms.query.get(id)
         if not accommodation:
-            return {'message': 'Accommodation not found!'}, 404
+            return {'message': 'room not found!'}, 404
         db.session.delete(accommodation)
         db.session.commit()
-        return {'message': 'Accommodation deleted successfully!'}
+        return {'message': 'room deleted successfully!'}
+    
+class Review(Resource):
+    def get (self):
+        reviews = Reviews.query.all()
+        if not reviews:
+            return {"error": "reviews not found"}, 404
+        return [accommo.to_dict() for accommo in reviews]
+    
+    @jwt_required()
+    def post(self):
+        current_user = get_jwt_identity()
+        if current_user['role'] != 'user':
+            return {'error' : 'The user is forbidden from adding new reviews!'}, 403
+
+        data = request.get_json()
+        
+        if not data or not all (key in data for key in ('user_id', 'rating', 'content')):
+            return {'error': 'Missing required fields!'}, 422
+        
+        new_review = Reviews(
+            user_id = current_user['user_id'],
+            rating=data.get('rating'),
+            content=data['content'],
+        )
+        db.session.add(new_review)
+        db.session.commit()
+        return new_review.to_dict(), 201
+    
+    @jwt_required()
+    def get_my_reviews(self):
+        current_user = get_jwt_identity()
+        user_reviews = Reviews.query.filter_by(user_id=current_user['id']).all()
+
+        if not user_reviews:
+            return {"message": "You have no reviews yet."}, 404
+
+        return [review.to_dict() for review in user_reviews], 200
+    
+    
+class ReviewList(Resource): 
+    
+    @jwt_required()
+    def get(self, id):
+        review = Reviews.query.get(id)
+        return {
+            "id": review.id,
+            "rating": review.rating,
+            "user_id": review.user_id,
+            "content": review.content
+        }
+    
+    @jwt_required()
+    def delete(self, id):
+        current_user = get_jwt_identity()
+
+        reviews = Reviews.query.get(id)
+
+        if current_user['role'] != 'admin' and reviews.user_id != current_user['id']:
+            return {'error': 'You are not authorized to delete this review!'}, 403
+        
+        if not reviews:
+            return {'message': 'reviews not found!'}, 404
+        
+        db.session.delete(reviews)
+        db.session.commit()
+        return {'message': 'reviews deleted successfully!'}
 
 #Bookings
 class BookingsList(Resource):
