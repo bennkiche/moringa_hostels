@@ -2,9 +2,12 @@ from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from models import User, Accommodations, Booking, db, Rooms
 from datetime import datetime, timedelta
+from werkzeug.security import check_password_hash
+from flask_bcrypt import Bcrypt
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 class Users(Resource):
     def get(self, id):
@@ -13,18 +16,34 @@ class Users(Resource):
             return {'message': 'User not found'}, 404
         return {'id': user.id, 'name': user.name, 'email': user.email}
 
-    def patch(self, id):
+    
+
+class Users(Resource):
+    @jwt_required()
+    def patch(self):
+        user_id = get_jwt_identity()
         data = request.get_json()
-        
-        user = User.query.get(id)
+
+        user = User.query.get(user_id)
         if not user:
-            return {'message': 'User not found'}, 404
+            return {'error': 'User not found'}, 404
+
+        # Ensure current password is provided
+        current_password = data.get('current_password')
+        if not current_password or not check_password_hash(user.password, current_password):
+            return {'error': 'Incorrect current password'}, 401
+
+        # Allow updates for name, email, and password
         if 'name' in data:
-            user.name = data ['name']
+            user.name = data['name']
         if 'email' in data:
-            user.email = data ['email']
+            user.email = data['email']
+        if 'new_password' in data:
+            user.password = bcrypt.generate_password_hash(data['new_password']).decode('utf-8')
+
         db.session.commit()
-        return user.to_dict(), 200
+        return {'message': 'Profile updated successfully'}, 200
+
 
     def delete(self, id):
         user = User.query.get(id)
