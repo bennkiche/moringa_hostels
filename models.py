@@ -20,7 +20,7 @@ class User(db.Model, SerializerMixin):
     password_reset = db.relationship('Password_reset', back_populates='user', lazy=True)
     
     # One-to-Many relationship with Review
-    reviews = db.relationship('Review', back_populates='user', lazy=True)
+    reviews = db.relationship('Reviews', back_populates='user', lazy=True)
 
     serialize_rules = ('-bookings', '-user_verification.user', '-password_reset.user', '-reviews.user')
 

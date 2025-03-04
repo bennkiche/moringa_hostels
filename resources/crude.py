@@ -268,23 +268,34 @@ class Review(Resource):
     @jwt_required()
     def post(self):
         current_user = get_jwt_identity()
-        if current_user['role'] != 'user':
-            return {'error' : 'The user is forbidden from adding new reviews!'}, 403
+        print("JWT Identity Debug:", current_user)
+
+        if current_user["role"] != "user":
+            return {"error": "The user is forbidden from adding new reviews!"}, 403
 
         data = request.get_json()
-        
-        if not data or not all (key in data for key in ('user_id', 'rating', 'content')):
-            return {'error': 'Missing required fields!'}, 422
-        
+
+        if not data or not all(key in data for key in ("rating", "content")):
+            return {"error": "Missing required fields!"}, 422
+
+        try:
+            rating = int(data.get("rating"))
+            rating = max(1, min(5, rating))
+        except ValueError:
+            return {"error": "Rating must be a valid number!"}, 400
+
         new_review = Reviews(
-            user_id = current_user['user_id'],
-            rating=data.get('rating'),
-            content=data['content'],
+            user_id=current_user["id"],  
+            rating=rating,
+            content=data["content"],
         )
+
         db.session.add(new_review)
         db.session.commit()
+
         return new_review.to_dict(), 201
-    
+
+
     @jwt_required()
     def get_my_reviews(self):
         current_user = get_jwt_identity()
