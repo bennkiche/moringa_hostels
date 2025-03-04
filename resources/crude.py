@@ -258,6 +258,17 @@ class RoomList(Resource):
         db.session.commit()
         return {'message': 'room deleted successfully!'}
     
+class RoomListResource(Resource):
+    def get(self):
+        accommodation_id = request.args.get('accommodation_id')  # Get accommodation ID from query params
+        query = db.session.query(Rooms)
+
+        if accommodation_id:
+            query = query.filter(Room.accommodation_id == int(accommodation_id))  # Filter rooms
+
+        rooms = [room.to_dict() for room in query.all()]  # Convert to JSON format
+        return {"rooms": rooms}, 200  # Return JSON response
+    
 class Review(Resource):
     def get (self):
         reviews = Reviews.query.all()
