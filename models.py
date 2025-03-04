@@ -84,6 +84,7 @@ class Booking(db.Model, SerializerMixin):
     room_id = db.Column(db.Integer, db.ForeignKey('rooms.id'), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String, default="confirmed")
     
     # Define the relationship with User without conflict
     user = db.relationship('User', back_populates='bookings', lazy=True)

@@ -349,15 +349,16 @@ class ReviewList(Resource):
 #Bookings
 class BookingsList(Resource):
     @jwt_required()
-    def get (self):
+    def get(self):
         current = get_jwt_identity()
         if current['role'] != 'admin':
-            return {'error' : 'the user is not authorized!'}, 403
+            return {'error': 'The user is not authorized!'}, 403
         
         bookings = Booking.query.all()
         if not bookings:
-            return {"error": "Bookings not found!"}, 404
-        return [accommo.to_dict() for accommo in bookings]
+            return {"error": "No bookings found!"}, 404
+
+        return [booking.to_dict() for booking in bookings]
     
     @jwt_required()
     def post(self):
@@ -404,7 +405,8 @@ class BookingsList(Resource):
             accommodation_id = accommodation_id,
             room_id = room.id,
             start_date = start_date,
-            end_date = end_date
+            end_date = end_date,
+            status="confirmed"
         )
 
         db.session.add(booking)
@@ -412,24 +414,59 @@ class BookingsList(Resource):
         db.session.commit()
         return booking.to_dict(),201
     
+class CancelBooking(Resource):
     @jwt_required()
-    def delete(self, id):
-        current =  get_jwt_identity()
+    def patch(self, id):  # Use PATCH instead of DELETE
+        current = get_jwt_identity()
 
         booking = Booking.query.get(id)
         if not booking:
             return {'message': 'Booking not found!'}, 404
-        
-        if current['role'] != 'admin' and booking.user_id != current['id']:
-            return {'error' : 'the user is not authorized to delete the booking!'}, 403
-        
-        room = booking.room
-        if room:
-            room.availability = "available!"
 
-        db.session.delete(booking)
+        # Only allow the user who booked it or an admin to cancel
+        if current['role'] != 'admin' and booking.user_id != current['id']:
+            return {'error': 'Unauthorized to cancel this booking!'}, 403
+
+        if booking.status == "canceled":
+            return {'message': 'Booking is already canceled!'}, 400
+
+        # Mark booking as canceled instead of deleting
+        booking.status = "canceled"
+        
+        # Make the room available again
+        if booking.room:
+            booking.room.availability = "available!"  # ✅ Keep consistent with `post()`
+
         db.session.commit()
-        return {'message': 'Booking canceled successfully!'}, 200
+
+        return {
+            'message': 'Booking canceled successfully!',
+            'booking': {
+                'id': booking.id,
+                'status': booking.status,
+                'room_availability': booking.room.availability
+            }
+        }, 200
+
+    
+    # @jwt_required()
+    # def delete(self, id):
+    #     current =  get_jwt_identity()
+
+    #     booking = Booking.query.get(id)
+    #     if not booking:
+    #         return {'message': 'Booking not found!'}, 404
+        
+    #     if current['role'] != 'admin' and booking.user_id != current['id']:
+    #         return {'error' : 'the user is not authorized to delete the booking!'}, 403
+        
+    #     room = booking.room
+    #     if room:
+    #         room.availability = "available!"
+
+    #     db.session.delete(booking)
+    #     db.session.commit()
+    #     return {'message': 'Booking canceled successfully!'}, 200
 
 class Bookings(Resource):
     @jwt_required()
@@ -440,16 +477,18 @@ class Bookings(Resource):
             return {'message': 'Booking not found!'}, 404
         
         if booking.user_id != current['id'] and current['role'] != 'admin':
-            return {'error' : 'the user is not authorized!'}, 403
-        
+            return {'error': 'Unauthorized to access this booking!'}, 403
+
         return {
             'id': booking.id,
             'user_id': booking.user_id,
             'accommodation_id': booking.accommodation_id,
             'room_id': booking.room_id,
             'start_date': booking.start_date,
-            'end_date': booking.end_date
+            'end_date': booking.end_date,
+            'status': booking.status  # ✅ Include status here
         }, 200
+
     
 class RoomBookings(Resource):
     def get(self, room_no):
