@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList, Room, RoomList, Review, ReviewList, MyReview
+from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList, Room, RoomList, Review, ReviewList, MyReview, RoomBookings
 from models import db, User, Accommodations
 
 load_dotenv()
@@ -172,6 +172,8 @@ api.add_resource(MyReview, '/my-reviews')
 
 api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>' )
 api.add_resource(Bookings, '/bookings/<int:id>')
+
+api.add_resource(RoomBookings, "/bookings/room/<int:room_no>")
 
 if __name__ == '__main__':
     app.run(debug=True)

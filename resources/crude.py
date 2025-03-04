@@ -386,7 +386,7 @@ class BookingsList(Resource):
         ).first()
 
         if existing_booking:
-            return {"error" : "Room not available for selected dates!"}
+            return {"error" : "Room is already booked for selected dates!"},400
         
         booking = Booking(
             user_id = user_id,
@@ -439,4 +439,15 @@ class Bookings(Resource):
             'start_date': booking.start_date,
             'end_date': booking.end_date
         }, 200
+    
+class RoomBookings(Resource):
+    def get(self, room_no):
+        bookings = Booking.query.filter_by(room_id=room_no).all()
+        if not bookings:
+            return {"message": "No bookings found for this room."}, 404
+
+        return [{
+            "start_date": booking.start_date.strftime("%Y-%m-%d %H:%M"),
+            "end_date": booking.end_date.strftime("%Y-%m-%d %H:%M")
+        } for booking in bookings]
 
