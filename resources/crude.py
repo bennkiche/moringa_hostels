@@ -295,9 +295,9 @@ class Review(Resource):
 
         return new_review.to_dict(), 201
 
-
+class MyReview(Resource):
     @jwt_required()
-    def get_my_reviews(self):
+    def get(self):
         current_user = get_jwt_identity()
         user_reviews = Reviews.query.filter_by(user_id=current_user['id']).all()
 

@@ -22,9 +22,9 @@ flask-cors = "*"
 bcrypt = "*"
 werkzeug = "*"
 flask-bcrypt = "*"
-flask-marshmallow = "*"
 flask-migrate = "*"
 marshmallow-sqlalchemy = "*"
+flask-marshmallow = "*"
 
 [dev-packages]
 
