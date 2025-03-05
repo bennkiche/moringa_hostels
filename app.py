@@ -269,7 +269,7 @@ api.add_resource(ReviewList, '/reviews/<int:id>')
 api.add_resource(MyReview, '/my-reviews')
 
 api.add_resource(BookingsList, '/bookings', '/bookings/<int:id>' )
-api.add_resource(Bookings, '/bookings/<int:id>')
+api.add_resource(Bookings, '/Userbookings')
 api.add_resource(CancelBooking, "/bookings/<int:id>/cancel")
 
 api.add_resource(RoomBookings, "/bookings/room/<int:room_no>")

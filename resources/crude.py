@@ -416,26 +416,23 @@ class BookingsList(Resource):
     
 class CancelBooking(Resource):
     @jwt_required()
-    def patch(self, id):  # Use PATCH instead of DELETE
+    def patch(self, id):
         current = get_jwt_identity()
 
         booking = Booking.query.get(id)
         if not booking:
             return {'message': 'Booking not found!'}, 404
 
-        # Only allow the user who booked it or an admin to cancel
         if current['role'] != 'admin' and booking.user_id != current['id']:
             return {'error': 'Unauthorized to cancel this booking!'}, 403
 
         if booking.status == "canceled":
             return {'message': 'Booking is already canceled!'}, 400
 
-        # Mark booking as canceled instead of deleting
         booking.status = "canceled"
         
-        # Make the room available again
         if booking.room:
-            booking.room.availability = "available!"  # ✅ Keep consistent with `post()`
+            booking.room.availability = "available!"
 
         db.session.commit()
 
@@ -470,26 +467,32 @@ class CancelBooking(Resource):
 
 class Bookings(Resource):
     @jwt_required()
-    def get(self, id):
+    def get(self):
         current = get_jwt_identity()
-        booking = Booking.query.get(id)
-        if not booking:
-            return {'message': 'Booking not found!'}, 404
-        
-        if booking.user_id != current['id'] and current['role'] != 'admin':
-            return {'error': 'Unauthorized to access this booking!'}, 403
+        user_id = current.get('id')
+        user_role = current.get('role')
 
-        return {
-            'id': booking.id,
-            'user_id': booking.user_id,
-            'accommodation_id': booking.accommodation_id,
-            'room_id': booking.room_id,
-            'start_date': booking.start_date,
-            'end_date': booking.end_date,
-            'status': booking.status  # ✅ Include status here
-        }, 200
+        if not user_id:
+            return {'error': 'User not found!'}, 403
 
-    
+        if user_role == 'admin':
+            bookings = Booking.query.all()
+        else:
+            bookings = Booking.query.filter_by(user_id=user_id).all()
+
+        if not bookings:
+            return {'message': 'No bookings found!'}, 404
+
+        return [{
+            'id': book.id,
+            'user_id': book.user_id,
+            'accommodation_id': book.accommodation_id,
+            'room_id': book.room_id,
+            'start_date': book.start_date.isoformat() if book.start_date else None,
+            'end_date': book.end_date.isoformat() if book.end_date else None,
+            'status': book.status
+        } for book in bookings], 200
+
 class RoomBookings(Resource):
     def get(self, room_no):
         bookings = Booking.query.filter_by(room_id=room_no).all()
