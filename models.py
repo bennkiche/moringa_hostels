@@ -47,18 +47,23 @@ class Reviews(db.Model, SerializerMixin):
 class Accommodations(db.Model, SerializerMixin):
     __tablename__ = 'accommodations'
 
-    id = db.Column(db.Integer, primary_key = True, unique = True)
-    name  = db.Column(db.String(100), nullable = False)
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String(100), nullable=False)
     image = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
+    
+    # New location columns for real-time maps
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
 
-    bookings = db.relationship('Booking', back_populates = 'accommodations', lazy = True)
-    rooms = db.relationship('Rooms', back_populates = 'accommodations',cascade="all, delete", passive_deletes=True, lazy = True)
+    bookings = db.relationship('Booking', back_populates='accommodations', lazy=True)
+    rooms = db.relationship('Rooms', back_populates='accommodations', cascade="all, delete", passive_deletes=True, lazy=True)
 
     serialize_rules = ('-bookings', '-rooms',)
 
     def __repr__(self):
-        return f"Accommodations('{self.name}', '{self.price}', '{self.image}', '{self.description}', '{self.availability}' )"
+        return f"Accommodations('{self.name}', '{self.latitude}', '{self.longitude}', '{self.image}', '{self.description}')"
+
     
 class Rooms(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)

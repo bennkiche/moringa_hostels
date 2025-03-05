@@ -1,8 +1,8 @@
 """create tables
 
-Revision ID: fd1963249fe2
+Revision ID: facc9f76fd63
 Revises: 
-Create Date: 2025-02-28 16:07:25.385793
+Create Date: 2025-03-05 16:10:51.797437
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'fd1963249fe2'
+revision = 'facc9f76fd63'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,6 +23,8 @@ def upgrade():
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('image', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
+    sa.Column('latitude', sa.Float(), nullable=False),
+    sa.Column('longitude', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
@@ -43,6 +45,14 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
+    )
+    op.create_table('reviews',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('rating', sa.Integer(), nullable=False),
+    sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('rooms',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -72,6 +82,7 @@ def upgrade():
     sa.Column('room_id', sa.Integer(), nullable=False),
     sa.Column('start_date', sa.DateTime(), nullable=False),
     sa.Column('end_date', sa.DateTime(), nullable=False),
+    sa.Column('status', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['accommodation_id'], ['accommodations.id'], ),
     sa.ForeignKeyConstraint(['room_id'], ['rooms.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
@@ -95,6 +106,7 @@ def downgrade():
     op.drop_table('booking')
     op.drop_table('user_verification')
     op.drop_table('rooms')
+    op.drop_table('reviews')
     op.drop_table('password_reset')
     op.drop_table('user')
     op.drop_table('accommodations')

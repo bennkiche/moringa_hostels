@@ -64,75 +64,95 @@ class Users(Resource):
         return {'message': 'User deleted successfully'}
 
 class AccommodationList(Resource):
-    def get (self):
-        accommodation = Accommodations.query.all()
-        if not accommodation:
+    def get(self):
+        accommodations = Accommodations.query.all()
+        if not accommodations:
             return {"error": "Accommodation not found"}, 404
-        return [accommo.to_dict() for accommo in accommodation]
+        return [accommo.to_dict() for accommo in accommodations]
     
     @jwt_required()
     def post(self):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidden from adding new accommodations!'}, 403
+            return {'error': 'The user is forbidden from adding new accommodations!'}, 403
 
         data = request.get_json()
-        if not data or not all (key in data for key in ('name', 'image', 'description')):
+        required_fields = {'name', 'image', 'description', 'latitude', 'longitude'}
+        if not data or not all(key in data for key in required_fields):
             return {'error': 'Missing required fields!'}, 422
         
         new_accommodation = Accommodations(
-            name=data ['name'],
-            image=data.get('image'), 
-            description=data.get('description')
+            name=data['name'],
+            image=data['image'], 
+            description=data['description'],
+            latitude=data['latitude'],
+            longitude=data['longitude']
         )
         db.session.add(new_accommodation)
         db.session.commit()
         return new_accommodation.to_dict(), 201
 
+
 class Accommodation(Resource):
-    @jwt_required()
     def get(self, id):
         accommodation = Accommodations.query.get(id)
-        return {
-            "id": accommodation.id,
-            "name": accommodation.name,
-            "description": accommodation.description
-        }
-    
-    def put(self, id):
-        accommodation = Accommodations.query.get(id)
         if not accommodation:
-            return {'message': 'Accommodation not found'}, 404
-        data = request.get_json()
-        availability = data.get('availability')
-        if availability is not None:
-            accommodation.availability = availability
-        db.session.commit()
+            return {"message": "Accommodation not found"}, 404
+        
         return {
             "id": accommodation.id,
             "name": accommodation.name,
-            "availability": accommodation.availability
-        },200
+            "description": accommodation.description,
+            "latitude": accommodation.latitude,
+            "longitude": accommodation.longitude
+        }
 
     @jwt_required()
     def patch(self, id):
         current_user = get_jwt_identity()
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidden from editing the accommodations!'}, 403
+            return {'error': 'The user is forbidden from editing the accommodations!'}, 403
         
         data = request.get_json()
         accommodation = Accommodations.query.get(id)
         
         if not accommodation:
             return {'message': 'Accommodation not found'}, 404
+        
         if 'name' in data:
-            accommodation.name = data ['name']
+            accommodation.name = data['name']
         if 'description' in data:
-            accommodation.description = data ['description']
+            accommodation.description = data['description']
         if 'image' in data:
-            accommodation.image = data ['image']
+            accommodation.image = data['image']
+        if 'latitude' in data:
+            accommodation.latitude = data['latitude']
+        if 'longitude' in data:
+            accommodation.longitude = data['longitude']
+
         db.session.commit()
         return accommodation.to_dict(), 200
+    
+    def put(self, id):
+        accommodation = Accommodations.query.get(id)
+        if not accommodation:
+            return {'message': 'Accommodation not found'}, 404
+
+        data = request.get_json()
+        if 'name' in data:
+            accommodation.name = data['name']
+        if 'description' in data:
+            accommodation.description = data['description']
+        if 'image' in data:
+            accommodation.image = data['image']
+        if 'latitude' in data:
+            accommodation.latitude = data['latitude']
+        if 'longitude' in data:
+            accommodation.longitude = data['longitude']
+
+        db.session.commit()
+        return accommodation.to_dict(), 200
+
     @jwt_required()
     def delete(self, id):
         current_user = get_jwt_identity()
@@ -145,6 +165,7 @@ class Accommodation(Resource):
         db.session.delete(accommodation)
         db.session.commit()
         return {'message': 'Accommodation and its associated rooms have been deleted successfully!'}, 200
+
     
 # Rooms
 class Room(Resource):
