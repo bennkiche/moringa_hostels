@@ -6,9 +6,6 @@ name = "pypi"
 [packages]
 flask-session = "*"
 faker = "*"
-psycopg2-binary = "*"
-python-dotenv = "*"
-gunicorn = "*"
 flask-sqlalchemy = "*"
 sqlalchemy-serializer = "*"
 flask-restful = "*"
@@ -25,6 +22,9 @@ flask-bcrypt = "*"
 flask-migrate = "*"
 marshmallow-sqlalchemy = "*"
 flask-marshmallow = "*"
+psycopg2-binary = "*"
+python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 
