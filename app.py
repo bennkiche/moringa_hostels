@@ -114,6 +114,25 @@ def mpesa_callback():
 
     except KeyError:
         return jsonify ({'error' : 'invalid callback data'}), 400
+
+@app.route('/api/accommodations', methods=['GET'])
+def get_accommodations():
+    price = request.args.get('price')
+    location = request.args.get('location')
+    room_type = request.args.get('room_type')
+
+    query = Accommodation.query
+
+    if price:
+        query = query.filter(Accommodation.price <= price)
+    if location:
+        query = query.filter(Accommodation.location.ilike(f"%{location}%"))
+    if room_type:
+        query = query.filter(Accommodation.room_type == room_type)
+
+    accommodations = query.all()
+    return jsonify([accommodation.to_dict() for accommodation in accommodations])
+
     
 def get_access_token():
     url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
