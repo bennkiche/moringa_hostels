@@ -240,12 +240,16 @@ class Accommodate(Resource):
 
 class Use(Resource):
     @jwt_required()
-    def post(self):
+    def get(self):
         current_user = get_jwt_identity()
+
         if current_user['role'] != 'admin':
-            return {'error' : 'The user is forbidded!'}, 403
-        user = User.query.all()
-        return[{'id':acom.id,'name':acom.name, 'email':acom.email, 'role':acom.role} for acom in user]
+            return {'error': 'Access forbidden!'}, 403
+
+        users = User.query.all()
+
+        return [{'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role} for user in users], 200
+
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
@@ -253,7 +257,6 @@ api.add_resource(Refresh, '/refresh')
 api.add_resource(DeleteAcc, '/delete')
 api.add_resource(Accommodate, '/accommodate')
 api.add_resource(Use, '/users')
-
 
 api.add_resource(AccommodationList, '/accommodations')
 api.add_resource(Accommodation, '/accommodations/<int:id>')

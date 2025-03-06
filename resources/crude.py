@@ -16,52 +16,55 @@ class Users(Resource):
             return {'message': 'User not found'}, 404
         return {'id': user.id, 'name': user.name, 'email': user.email}
 
-    
-
-class Users(Resource):
     @jwt_required()
     def patch(self, id):
-        user = User.query.get(id)
+        current_user = get_jwt_identity()
 
+        # Ensure user can only update their own profile
+        if int(current_user['id']) != int(id):
+            return {'error': 'You can only update your own profile'}, 403
+
+        user = User.query.get(id)
         if not user:
             return {'error': 'User not found'}, 404
 
-        print(f"User found: {user.id}, Stored password: {user.password}")  # Debugging
-
         data = request.get_json()
-        print(f"Received data: {data}")  # Debugging
+        new_name = data.get('name')
+        new_email = data.get('email')
+        new_password = data.get('new_password')
 
-        current_password = data.get('current_password')
+        # Allow updates for name and email without needing current password
+        if new_name:
+            user.name = new_name
+        if new_email:
+            user.email = new_email
 
-        # Check if current password is provided
-        if not current_password:
-            return {'error': 'Current password is required'}, 400
-
-        try:
+        # If the user provided a new password, require current password
+        if new_password and new_password.strip():
+            current_password = data.get('current_password')
+            if not current_password:
+                return {'error': 'Current password is required to change password'}, 400
             if not check_password_hash(user.password, current_password):
                 return {'error': 'Incorrect current password'}, 401
-        except ValueError as e:
-            return {'error': f'Invalid password hash: {str(e)}'}, 400
-
-        # Allow updates for name, email, and password
-        if 'name' in data:
-            user.name = data['name']
-        if 'email' in data:
-            user.email = data['email']
-        if 'new_password' in data:
-            user.password = bcrypt.generate_password_hash(data['new_password']).decode('utf-8')
+            user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
 
         db.session.commit()
         return {'message': 'Profile updated successfully'}, 200
-
-
+    
+    @jwt_required
     def delete(self, id):
+        current_user = get_jwt_identity() 
+
+        if int(current_user['id']) != int(id):  # Ensure the user can only delete their own account
+            return {'error': 'You can only delete your own account'}, 403
+        
         user = User.query.get(id)
         if not user:
-            return ({'message': 'User not found'}), 404
+            return {'message': 'User not found'}, 404
+        
         db.session.delete(user)
         db.session.commit()
-        return {'message': 'User deleted successfully'}
+        return {'message': 'User deleted successfully'}, 200
 
 class AccommodationList(Resource):
     def get(self):
