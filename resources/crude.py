@@ -499,6 +499,7 @@ class Bookings(Resource):
         if not user_id:
             return {'error': 'User not found!'}, 403
 
+        # Fetch bookings based on user role
         if user_role == 'admin':
             bookings = Booking.query.all()
         else:
@@ -514,8 +515,14 @@ class Bookings(Resource):
             'room_id': book.room_id,
             'start_date': book.start_date.isoformat() if book.start_date else None,
             'end_date': book.end_date.isoformat() if book.end_date else None,
-            'status': book.status
+            'status': book.status,
+            'room_type': book.room.room_type if book.room else None,
+            'room_image': book.room.image if book.room else None,
+            'room_description': book.room.description if book.room else None,
+            'room_price': book.room.price if book.room else None,
+            'accommodation_id': book.room.accommodation_id if book.room else None
         } for book in bookings], 200
+
 
 class RoomBookings(Resource):
     def get(self, room_no):
