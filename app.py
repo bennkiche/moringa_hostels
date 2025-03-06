@@ -9,7 +9,7 @@ from flask_bcrypt import Bcrypt
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from resources.crude import Accommodation,AccommodationList,Users,Bookings,BookingsList, Room, RoomList, Review, ReviewList, MyReview, RoomBookings, RoomListResource, CancelBooking
-from models import db, User, Accommodations
+from models import db, User, Accommodations,Rooms
 
 import json
 import base64
@@ -115,23 +115,6 @@ def mpesa_callback():
     except KeyError:
         return jsonify ({'error' : 'invalid callback data'}), 400
 
-@app.route('/api/accommodations', methods=['GET'])
-def get_accommodations():
-    price = request.args.get('price')
-    location = request.args.get('location')
-    room_type = request.args.get('room_type')
-
-    query = Accommodation.query
-
-    if price:
-        query = query.filter(Accommodation.price <= price)
-    if location:
-        query = query.filter(Accommodation.location.ilike(f"%{location}%"))
-    if room_type:
-        query = query.filter(Accommodation.room_type == room_type)
-
-    accommodations = query.all()
-    return jsonify([accommodation.to_dict() for accommodation in accommodations])
 
     
 def get_access_token():
@@ -146,6 +129,38 @@ def generate_password(shortcode, passkey, timestamp):
 def get_timestamp():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
+@app.route('/api/accommodations', methods=['GET'])
+def get_accommodations():
+    search_query = request.args.get('query')
+
+    query = db.session.query(Accommodations).join(Rooms)
+
+    if search_query:
+        search_filter = f"%{search_query}%"
+        query = query.filter(
+            db.or_(
+                Accommodations.name.ilike(search_filter),
+                Rooms.room_type.ilike(search_filter),
+                Rooms.price.ilike(search_filter)
+            )
+        )
+
+    # Use set() to avoid duplicate accommodations from room joins
+    unique_accommodations = {a for a in query.all()}
+
+    results = [
+        {
+            "id": a.id,
+            "name": a.name,
+            "image": a.image,
+            "description": a.description,
+            "latitude": a.latitude,
+            "longitude": a.longitude,
+        }
+        for a in unique_accommodations
+    ]
+
+    return jsonify(results)
 
 @app.route('/')
 def index():
