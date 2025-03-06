@@ -172,11 +172,18 @@ class Accommodation(Resource):
     
 # Rooms
 class Room(Resource):
-    def get (self):
-        accommodation = Rooms.query.all()
-        if not accommodation:
-            return {"error": "rooms not found"}, 404
-        return [accommo.to_dict() for accommo in accommodation]
+    def get(self):
+        accommodation_id = request.args.get('accommodation_id')  # Get accommodation ID
+
+        if accommodation_id:
+            rooms = Rooms.query.filter_by(accommodation_id=accommodation_id).all()  # Filter by accommodation_id
+        else:
+            rooms = Rooms.query.all()  # Return all rooms if no filter is applied
+
+        if not rooms:
+            return {"error": "Rooms not found"}, 404
+
+        return [room.to_dict() for room in rooms], 200  # Convert to JSON
     
     @jwt_required()
     def post(self):
@@ -284,14 +291,14 @@ class RoomList(Resource):
     
 class RoomListResource(Resource):
     def get(self):
-        accommodation_id = request.args.get('accommodation_id')  # Get accommodation ID from query params
+        accommodation_id = request.args.get('accommodation_id')
         query = db.session.query(Rooms)
 
         if accommodation_id:
-            query = query.filter(Room.accommodation_id == int(accommodation_id))  # Filter rooms
+            query = query.filter(Rooms.accommodation_id == int(accommodation_id))  # Ensure `Rooms` is used
 
-        rooms = [room.to_dict() for room in query.all()]  # Convert to JSON format
-        return {"rooms": rooms}, 200  # Return JSON response
+        rooms = [room.to_dict() for room in query.all()]
+        return rooms, 200  # Remove {"rooms": rooms} and return just the list
     
 class Review(Resource):
     def get (self):

@@ -129,38 +129,46 @@ def generate_password(shortcode, passkey, timestamp):
 def get_timestamp():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-@app.route('/api/accommodations', methods=['GET'])
-def get_accommodations():
-    search_query = request.args.get('query')
+# @app.route('/api/accommodations', methods=['GET'])
+# def get_accommodations():
+#     search_query = request.args.get('query')
+#     min_price = request.args.get('min_price', type=float)
+#     max_price = request.args.get('max_price', type=float)
 
-    query = db.session.query(Accommodations).join(Rooms)
+#     query = db.session.query(Accommodations).join(Rooms)
 
-    if search_query:
-        search_filter = f"%{search_query}%"
-        query = query.filter(
-            db.or_(
-                Accommodations.name.ilike(search_filter),
-                Rooms.room_type.ilike(search_filter),
-                Rooms.price.ilike(search_filter)
-            )
-        )
+#     if search_query:
+#         search_filter = f"%{search_query}%"
+#         query = query.filter(
+#             db.or_(
+#                 Accommodations.name.ilike(search_filter),
+#                 Rooms.room_type.ilike(search_filter),
+#             )
+#         )
 
-    # Use set() to avoid duplicate accommodations from room joins
-    unique_accommodations = {a for a in query.all()}
+#     if min_price is not None and max_price is not None:
+#         query = query.filter(Rooms.price.between(min_price, max_price))
+#     elif min_price is not None:
+#         query = query.filter(Rooms.price >= min_price)
+#     elif max_price is not None:
+#         query = query.filter(Rooms.price <= max_price)
 
-    results = [
-        {
-            "id": a.id,
-            "name": a.name,
-            "image": a.image,
-            "description": a.description,
-            "latitude": a.latitude,
-            "longitude": a.longitude,
-        }
-        for a in unique_accommodations
-    ]
+#     # Remove duplicates caused by room joins
+#     unique_accommodations = {a for a in query.all()}
 
-    return jsonify(results)
+#     results = [
+#         {
+#             "id": a.id,
+#             "name": a.name,
+#             "image": a.image,
+#             "description": a.description,
+#             "latitude": a.latitude,
+#             "longitude": a.longitude,
+#         }
+#         for a in unique_accommodations
+#     ]
+
+#     return jsonify(results)
 
 @app.route('/')
 def index():
