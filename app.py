@@ -32,7 +32,6 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 api = Api(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-# mail = Mail(app)
 
 consumer_key = os.getenv('CONSUMER_KEY')
 consumer_secret = os.getenv('CONSUMER_SECRET')
@@ -129,47 +128,6 @@ def generate_password(shortcode, passkey, timestamp):
 def get_timestamp():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-# @app.route('/api/accommodations', methods=['GET'])
-# def get_accommodations():
-#     search_query = request.args.get('query')
-#     min_price = request.args.get('min_price', type=float)
-#     max_price = request.args.get('max_price', type=float)
-
-#     query = db.session.query(Accommodations).join(Rooms)
-
-#     if search_query:
-#         search_filter = f"%{search_query}%"
-#         query = query.filter(
-#             db.or_(
-#                 Accommodations.name.ilike(search_filter),
-#                 Rooms.room_type.ilike(search_filter),
-#             )
-#         )
-
-#     if min_price is not None and max_price is not None:
-#         query = query.filter(Rooms.price.between(min_price, max_price))
-#     elif min_price is not None:
-#         query = query.filter(Rooms.price >= min_price)
-#     elif max_price is not None:
-#         query = query.filter(Rooms.price <= max_price)
-
-#     # Remove duplicates caused by room joins
-#     unique_accommodations = {a for a in query.all()}
-
-#     results = [
-#         {
-#             "id": a.id,
-#             "name": a.name,
-#             "image": a.image,
-#             "description": a.description,
-#             "latitude": a.latitude,
-#             "longitude": a.longitude,
-#         }
-#         for a in unique_accommodations
-#     ]
-
-#     return jsonify(results)
-
 @app.route('/')
 def index():
     return 'Welcome to the home page!'
@@ -199,8 +157,6 @@ class Signup(Resource):
         if not is_valid_email(email):
             return {'error': 'Invalid email format, please provide a valid email address.'}, 400
         
-        # if not is_real_email(email):
-        #     return {'error': 'The email provided does not exist or is invalid in real life.'}, 400
 
         if User.query.filter_by(email=email).first():
             return {'error': 'Email already exists!'}, 400

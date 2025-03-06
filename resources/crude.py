@@ -20,7 +20,6 @@ class Users(Resource):
     def patch(self, id):
         current_user = get_jwt_identity()
 
-        # Ensure user can only update their own profile
         if int(current_user['id']) != int(id):
             return {'error': 'You can only update your own profile'}, 403
 
@@ -33,13 +32,11 @@ class Users(Resource):
         new_email = data.get('email')
         new_password = data.get('new_password')
 
-        # Allow updates for name and email without needing current password
         if new_name:
             user.name = new_name
         if new_email:
             user.email = new_email
 
-        # If the user provided a new password, require current password
         if new_password and new_password.strip():
             current_password = data.get('current_password')
             if not current_password:
@@ -55,7 +52,7 @@ class Users(Resource):
     def delete(self, id):
         current_user = get_jwt_identity() 
 
-        if int(current_user['id']) != int(id):  # Ensure the user can only delete their own account
+        if int(current_user['id']) != int(id):
             return {'error': 'You can only delete your own account'}, 403
         
         user = User.query.get(id)
@@ -173,17 +170,17 @@ class Accommodation(Resource):
 # Rooms
 class Room(Resource):
     def get(self):
-        accommodation_id = request.args.get('accommodation_id')  # Get accommodation ID
+        accommodation_id = request.args.get('accommodation_id')  
 
         if accommodation_id:
-            rooms = Rooms.query.filter_by(accommodation_id=accommodation_id).all()  # Filter by accommodation_id
+            rooms = Rooms.query.filter_by(accommodation_id=accommodation_id).all()
         else:
-            rooms = Rooms.query.all()  # Return all rooms if no filter is applied
+            rooms = Rooms.query.all() 
 
         if not rooms:
             return {"error": "Rooms not found"}, 404
 
-        return [room.to_dict() for room in rooms], 200  # Convert to JSON
+        return [room.to_dict() for room in rooms], 200 
     
     @jwt_required()
     def post(self):
@@ -295,10 +292,10 @@ class RoomListResource(Resource):
         query = db.session.query(Rooms)
 
         if accommodation_id:
-            query = query.filter(Rooms.accommodation_id == int(accommodation_id))  # Ensure `Rooms` is used
+            query = query.filter(Rooms.accommodation_id == int(accommodation_id))  
 
         rooms = [room.to_dict() for room in query.all()]
-        return rooms, 200  # Remove {"rooms": rooms} and return just the list
+        return rooms, 200  
     
 class Review(Resource):
     def get (self):
@@ -475,26 +472,6 @@ class CancelBooking(Resource):
                 'room_availability': booking.room.availability
             }
         }, 200
-
-    
-    # @jwt_required()
-    # def delete(self, id):
-    #     current =  get_jwt_identity()
-
-    #     booking = Booking.query.get(id)
-    #     if not booking:
-    #         return {'message': 'Booking not found!'}, 404
-        
-    #     if current['role'] != 'admin' and booking.user_id != current['id']:
-    #         return {'error' : 'the user is not authorized to delete the booking!'}, 403
-        
-    #     room = booking.room
-    #     if room:
-    #         room.availability = "available!"
-
-    #     db.session.delete(booking)
-    #     db.session.commit()
-    #     return {'message': 'Booking canceled successfully!'}, 200
 
 class Bookings(Resource):
     @jwt_required()

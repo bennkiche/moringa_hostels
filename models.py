@@ -19,7 +19,6 @@ class User(db.Model, SerializerMixin):
     user_verification = db.relationship('User_verification', back_populates='user', lazy=True)
     password_reset = db.relationship('Password_reset', back_populates='user', lazy=True)
     
-    # One-to-Many relationship with Review
     reviews = db.relationship('Reviews', back_populates='user', lazy=True)
 
     serialize_rules = ('-bookings', '-user_verification.user', '-password_reset.user', '-reviews.user')
@@ -52,7 +51,6 @@ class Accommodations(db.Model, SerializerMixin):
     image = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
     
-    # New location columns for real-time maps
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
 
@@ -91,7 +89,6 @@ class Booking(db.Model, SerializerMixin):
     end_date = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String, default="confirmed")
     
-    # Define the relationship with User without conflict
     user = db.relationship('User', back_populates='bookings', lazy=True)
     accommodations = db.relationship('Accommodations', back_populates='bookings', lazy=True)
     room = db.relationship('Rooms', back_populates='bookings', lazy=True)
